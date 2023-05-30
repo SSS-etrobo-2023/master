@@ -5,4 +5,5 @@
 .gitignore_bkup
 *.asp
 *.log
-*/swp
+*.swp
+*.status
