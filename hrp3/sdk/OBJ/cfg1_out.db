@@ -1,0 +1,38 @@
+{	:apiDefinition{I"INCLUDE:ET{:
+PARAM[{:	NAME:	file:STRING_LITERALTI"CRE_TSK;T{	:APINAMEI"CRE_TSK;T:API@:KEYPARI"
+tskid;T;[{;@:ID_DEFT{:
+BRACEI"{;T{;I"tskatr;T:EXPTYPEI"unsigned_t;T{;I"
+exinf;T{;I"	task;T{;I"itskpri;T;I"signed_t;T:SIGNEDT{;I"
+stksz;T;I"unsigned_t;T{;I"stk;T:OPTIONALT{;I"sstksz;T;I"unsigned_t;T;T{;I"	sstk;T;T{;I"};TI"CRE_SEM;T{	;I"CRE_SEM;T;@+;I"
+semid;T;[{;@,;T{;I"{;T{;I"sematr;T;I"unsigned_t;T{;I"isemcnt;T;I"unsigned_t;T{;I"maxsem;T;I"unsigned_t;T{;I"};TI"CRE_FLG;T{	;I"CRE_FLG;T;@>;I"
+flgid;T;[
+{;@?;T{;I"{;T{;I"flgatr;T;I"unsigned_t;T{;I"iflgptn;T;I"unsigned_t;T{;I"};TI"CRE_DTQ;T{	;I"CRE_DTQ;T;@N;I"
+dtqid;T;[{;@O;T{;I"{;T{;I"dtqatr;T;I"unsigned_t;T{;I"dtqcnt;T;I"unsigned_t;T{;I"
+dtqmb;T;T{;I"};TI"CRE_PDQ;T{	;I"CRE_PDQ;T;@`;I"
+pdqid;T;[{;@a;T{;I"{;T{;I"pdqatr;T;I"unsigned_t;T{;I"pdqcnt;T;I"unsigned_t;T{;I"maxdpri;T;I"signed_t;T;T{;I"
+pdqmb;T;T{;I"};TI"CRE_MTX;T{	;I"CRE_MTX;T;@u;I"
+mtxid;T;[
+{;@v;T{;I"{;T{;I"mtxatr;T;I"unsigned_t;T{	;I"ceilpri;T;I"signed_t;T;T;T{;I"};TI"CRE_CYC;T{	;I"CRE_CYC;T;@Ä;I"
+cycid;T;[{;@Å;T{;I"{;T{;I"cycatr;T;I"unsigned_t;T{;I"{;T{;I"nfymode;T;I"unsigned_t;T{;I"	par1;T{;I"	par2;T;T{;I"	par3;T;T{;I"	par4;T;T{;I"};T{;I"cyctim;T;I"unsigned_t;T{;I"cycphs;T;I"unsigned_t;T{;I"};TI"CRE_ALM;T{	;I"CRE_ALM;T;@¢;I"
+almid;T;[{;@£;T{;I"{;T{;I"almatr;T;I"unsigned_t;T{;I"{;T{;I"nfymode;T;I"unsigned_t;T{;I"	par1;T{;I"	par2;T;T{;I"	par3;T;T{;I"	par4;T;T{;I"};T{;I"};TI"ATT_SEC;T{;I"ATT_SEC;T;@æ;[{;I"secname;T:STRINGT;I"char *;T{;I"{;T{;I"mematr;T;I"unsigned_t;T{	;I"regname;T;T;I"char *;T;T{;I"};T{;I"{;T:OPTBRACET{;I"acptn1;T;I"unsigned_t;T{;I"acptn2;T;I"unsigned_t;T{;I"acptn3;T;I"unsigned_t;T{;I"acptn4;T;I"unsigned_t;T{;I"};TI"ATT_MOD;T{;I"ATT_MOD;T;@ﬂ;[{;I"modname;T;T;I"char *;T{;I"{;T;T{;I"acptn1;T;I"unsigned_t;T{;I"acptn2;T;I"unsigned_t;T{;I"acptn3;T;I"unsigned_t;T{;I"acptn4;T;I"unsigned_t;T{;I"};T:symbolValueTable{,I"CHAR_BIT;T{:	EXPRI"CHAR_BIT;TI"SCHAR_MAX;T{;I"SCHAR_MAX;T;TI"SCHAR_MIN;T{;I"SCHAR_MIN;T;TI"UCHAR_MAX;T{;I"UCHAR_MAX;TI"CHAR_MAX;T{;I"CHAR_MAX;T;TI"CHAR_MIN;T{;I"CHAR_MIN;T;TI"SHRT_MAX;T{;I"SHRT_MAX;T;TI"SHRT_MIN;T{;I"SHRT_MIN;T;TI"USHRT_MAX;T{;I"USHRT_MAX;TI"INT_MAX;T{;I"INT_MAX;T;TI"INT_MIN;T{;I"INT_MIN;T;TI"UINT_MAX;T{;I"UINT_MAX;TI"LONG_MAX;T{;I"LONG_MAX;T;TI"LONG_MIN;T{;I"LONG_MIN;T;TI"ULONG_MAX;T{;I"ULONG_MAX;TI"SIL_ENDIAN_BIG;T{;I"	true;T:	BOOLT:CONDITIONI"defined(SIL_ENDIAN_BIG);TI"SIL_ENDIAN_LITTLE;T{;I"	true;T;T;I"defined(SIL_ENDIAN_LITTLE);TI"TA_NULL;T{;I"TA_NULL;TI"TA_TPRI;T{;I"TA_TPRI;TI"TA_CEILING;T{;I"TA_CEILING;TI"TMIN_TPRI;T{;I"TMIN_TPRI;T;TI"TMAX_TPRI;T{;I"TMAX_TPRI;T;TI"TMIN_DPRI;T{;I"TMIN_DPRI;T;TI"TMAX_DPRI;T{;I"TMAX_DPRI;T;TI"TNFY_HANDLER;T{;I"TNFY_HANDLER;TI"TNFY_SETVAR;T{;I"TNFY_SETVAR;TI"TNFY_INCVAR;T{;I"TNFY_INCVAR;TI"TNFY_ACTTSK;T{;I"TNFY_ACTTSK;TI"TNFY_WUPTSK;T{;I"TNFY_WUPTSK;TI"TNFY_SIGSEM;T{;I"TNFY_SIGSEM;TI"TNFY_SETFLG;T{;I"TNFY_SETFLG;TI"TNFY_SNDDTQ;T{;I"TNFY_SNDDTQ;TI"TENFY_SETVAR;T{;I"TENFY_SETVAR;TI"TENFY_INCVAR;T{;I"TENFY_INCVAR;TI"TENFY_ACTTSK;T{;I"TENFY_ACTTSK;TI"TENFY_WUPTSK;T{;I"TENFY_WUPTSK;TI"TENFY_SIGSEM;T{;I"TENFY_SIGSEM;TI"TENFY_SETFLG;T{;I"TENFY_SETFLG;TI"TENFY_SNDDTQ;T{;I"TENFY_SNDDTQ;T:cfgFileInfo[{:DIRECTIVEI"#include "api.cfg.h";T:_FILE_I" ../common/ev3api/ev3api.cfg;T:_LINE_i{;I"CRE_TSK;T;@o;i	I"
+tskid;TI"APP_INIT_TASK;TI"tskatr;TI"TA_ACT;TI"
+exinf;TI"0;TI"	task;TI"_app_init_task;TI"itskpri;TI"TPRI_APP_INIT_TASK;TI"
+stksz;TI"STACK_SIZE;TI"stk;TI"	NULL;T:DOMAINI"TDOM_APP;T:
+INDEXi{
+;I"ATT_MOD;T;@o;iI"modname;TI""ev3api.o";T;i{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_battery.o";T;i{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_brick.o";T;i	{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_fs.o";T;i
+{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_newlib.o";T;i{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_lcd.o";T;i{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_motor.o";T;i{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_sensor.o";T;i{
+;I"ATT_MOD;T;@o;i@ÉI""ev3api_speaker.o";T;i{
+;I"ATT_MOD;T;I"../common/app_common.cfg;T;i@ÉI""log_output.o";T;i{
+;I"ATT_MOD;T;@ü;i	@ÉI""vasyslog.o";T;i{
+;I"ATT_MOD;T;@ü;i
+@ÉI""t_perror.o";T;i{
+;I"ATT_MOD;T;@ü;i@ÉI""strerror.o";T;i{
+;I"ATT_MOD;T;@ü;i@ÉI""libc.a";T;i{;I"#include "app.h";T;I"#../workspace/sample_c4/app.cfg;T;i{;I"CRE_TSK;T;@Ø;i@rI"MAIN_TASK;T@tI"TA_ACT;T@vI"0;T@xI"main_task;T@zI"TMIN_APP_TPRI + 1;T@|I"STACK_SIZE;T@~I"	NULL;T;I"TDOM_APP;T;i{;I"CRE_TSK;T;@Ø;i@rI"BT_TASK;T@tI"TA_NULL;T@vI"0;T@xI"bt_task;T@zI"TMIN_APP_TPRI + 2;T@|I"STACK_SIZE;T@~I"	NULL;T;@π;i{
+;I"ATT_MOD;T;@Ø;i@ÉI""app.o";T;i:domainId{I"TDOM_KERNEL;Ti˙I"TDOM_NONE;Ti˘I"TDOM_APP;Ti

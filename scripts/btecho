@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+#
+# now btecho is synonim of `btcat echo`
+#
+btcat echo "$@"

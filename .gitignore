@@ -1,0 +1,5 @@
+*.tgz
+*.o
+*.gz
+/ev3rt-1.1-release/
+.gitignore_bkup
