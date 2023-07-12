@@ -68,7 +68,8 @@ static const sensor_port_t
 
 static const motor_port_t
     left_motor      = EV3_PORT_C,
-    right_motor     = EV3_PORT_B;
+    right_motor     = EV3_PORT_B,
+    center_motor    = EV3_PORT_A;
 
 static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
 #if 0
@@ -77,8 +78,8 @@ static FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
 /* sample_c1マクロ */
-#define LIGHT_WHITE  23         /* 白色の光センサ値 */
-#define LIGHT_BLACK  0          /* 黒色の光センサ値 */
+#define LIGHT_WHITE  64         /* 白色の光センサ値 */
+#define LIGHT_BLACK  2          /* 黒色の光センサ値 */
 /* sample_c2マクロ */
 #define SONAR_ALERT_DISTANCE 30 /* 超音波センサによる障害物検知距離[cm] */
 /* sample_c4マクロ */
@@ -92,7 +93,7 @@ static FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 #define CALIB_FONT_HEIGHT (8/*TODO: magic number*/)
 
 /* 関数プロトタイプ宣言 */
-static int sonar_alert(void);
+static int sonar_alert(void);//voidは引数なし
 static void _syslog(int level, char* text);
 static void _log(char* text);
 //static void tail_control(signed int angle);
@@ -113,13 +114,14 @@ void main_task(intptr_t unused)
     else        _log("Right course:");
 
     /* センサー入力ポートの設定 */
-    ev3_sensor_config(sonar_sensor, ULTRASONIC_SENSOR);
+    ev3_sensor_config(sonar_sensor, ULTRASONIC_SENSOR);//第一引数→センサポート番号　第二引数→センサタイプ
     ev3_sensor_config(color_sensor, COLOR_SENSOR);
     ev3_color_sensor_get_reflect(color_sensor); /* 反射率モード */
     ev3_sensor_config(touch_sensor, TOUCH_SENSOR);
     /* モーター出力ポートの設定 */
     ev3_motor_config(left_motor, LARGE_MOTOR);
     ev3_motor_config(right_motor, LARGE_MOTOR);
+    ev3_motor_config(center_motor,LARGE_MOTOR);
 
     if (_bt_enabled)
     {
@@ -137,13 +139,14 @@ void main_task(intptr_t unused)
     if (_SIM)   _log("Hit SPACE bar to start");
     else        _log("Tap Touch Sensor to start");
 
+    //ログ出力
     if (_bt_enabled)
     {
         fprintf(bt, "Bluetooth Remote Start: Ready.\n", EV3_SERIAL_BT);
         fprintf(bt, "send '1' to start\n", EV3_SERIAL_BT);
         LOG_D_DEBUG("initalize complete. ret=%d\n", 1);
     }
-
+    
     /* スタート待機 */
     while(1)
     {
@@ -161,16 +164,33 @@ void main_task(intptr_t unused)
 
         tslp_tsk(10 * 1000U); /* 10msecウェイト */
     }
+    //モーターストップ
+    ev3_motor_stop(EV3_PORT_A,true);
 
     /* 走行モーターエンコーダーリセット */
     ev3_motor_reset_counts(left_motor);
     ev3_motor_reset_counts(right_motor);
 
     ev3_led_set_color(LED_GREEN); /* スタート通知 */
-
+    
+    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+    while(1)
+    {
+        //モーターストップからの2回目のタッチ
+        if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
+            break;
+        }
+    }
     /**
     * Main loop
     */
+   float Kp = 2;
+   float Kd = 0.5;
+   float sensor = 30;
+   float sensor_dt = 5;
+   float curb = 0.0;
+
+   int count = 0;
     while(1)
     {
         if (ev3_button_is_pressed(BACK_BUTTON)) break;
@@ -182,14 +202,29 @@ void main_task(intptr_t unused)
         else
         {
             forward = 30; /* 前進命令 */
-            if (ev3_color_sensor_get_reflect(color_sensor) >= (LIGHT_WHITE + LIGHT_BLACK)/2)
-            {
-                turn = -80 * _EDGE; /* 右旋回命令　(右コースは逆) */
+            
+            if(count % 3 == 0){
+                sensor_dt = ev3_color_sensor_get_reflect(color_sensor) - sensor_dt;
             }
-            else
-            {
-                turn =  80 * _EDGE; /* 左旋回命令　(右コースは逆) */
-            }
+            sensor = ev3_color_sensor_get_reflect(color_sensor);
+
+            curb = Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor) - Kd * (sensor_dt);
+            turn = curb;
+            // if (ev3_color_sensor_get_reflect(color_sensor) >= (LIGHT_WHITE + LIGHT_BLACK)/2)
+            // {
+            //     turn = -40 * _EDGE; /* 右旋回命令　(右コースは逆) */
+            // }
+            // else
+            // {
+            //     turn =  40 * _EDGE; /* 左旋回命令　(右コースは逆) */
+            // }
+        }
+
+        if(count % 20 == 0){
+            LOG_D_DEBUG("kp=%f\n", Kp); 
+            LOG_D_DEBUG("sensor=%f\n", sensor); 
+            LOG_D_DEBUG("curb=%f\n", curb); 
+            LOG_D_DEBUG("turn=%d\n", turn); 
         }
 
         /* 左右モータでロボットのステアリング操作を行う */
@@ -201,7 +236,9 @@ void main_task(intptr_t unused)
         );
 
         tslp_tsk(4 * 1000U); /* 4msec周期起動 */
+        count++;
     }
+   
     ev3_motor_stop(left_motor, false);
     ev3_motor_stop(right_motor, false);
 
