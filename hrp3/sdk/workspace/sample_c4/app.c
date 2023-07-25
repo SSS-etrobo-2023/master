@@ -117,6 +117,9 @@ void main_task(intptr_t unused)
     ev3_sensor_config(color_sensor, COLOR_SENSOR);
     ev3_color_sensor_get_reflect(color_sensor); /* 反射率モード */
     ev3_sensor_config(touch_sensor, TOUCH_SENSOR);
+    /* work around */
+    tslp_tsk(10 * 1000); /* 10ms wait */
+
     /* モーター出力ポートの設定 */
     ev3_motor_config(left_motor, LARGE_MOTOR);
     ev3_motor_config(right_motor, LARGE_MOTOR);
@@ -139,9 +142,8 @@ void main_task(intptr_t unused)
 
     if (_bt_enabled)
     {
-        fprintf(bt, "Bluetooth Remote Start: Ready.\n", EV3_SERIAL_BT);
-        fprintf(bt, "send '1' to start\n", EV3_SERIAL_BT);
-        LOG_D_DEBUG("initalize complete. ret=%d\n", 1);
+        fprintf(bt, "Bluetooth Remote Start: Ready.\n");
+        fprintf(bt, "send '1' to start\n");
     }
 
     /* スタート待機 */
@@ -201,9 +203,16 @@ void main_task(intptr_t unused)
         );
 
         tslp_tsk(4 * 1000U); /* 4msec周期起動 */
+
+        if (bt_cmd == 2) {
+            /* 駆動停止 */
+            break;
+        }
     }
     ev3_motor_stop(left_motor, false);
     ev3_motor_stop(right_motor, false);
+
+    LOG_D_DEBUG("Program end.\n");
 
     if (_bt_enabled)
     {
@@ -267,6 +276,9 @@ void bt_task(intptr_t unused)
             {
             case '1':
                 bt_cmd = 1;
+                break;
+            case '2':
+                bt_cmd = 2;
                 break;
             default:
                 break;
