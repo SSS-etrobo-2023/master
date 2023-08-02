@@ -12,8 +12,6 @@
 #include "app.h"
 #include "etroboc_ext.h"
 
-#include "common.h"
-
 #if defined(BUILD_MODULE)
     #include "module_cfg.h"
 #else
@@ -71,9 +69,7 @@ static const motor_port_t
     right_motor     = EV3_PORT_B;
 
 static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
-#if 0
 static FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
-#endif
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
 /* sample_c1マクロ */
@@ -141,7 +137,6 @@ void main_task(intptr_t unused)
     {
         fprintf(bt, "Bluetooth Remote Start: Ready.\n", EV3_SERIAL_BT);
         fprintf(bt, "send '1' to start\n", EV3_SERIAL_BT);
-        LOG_D_DEBUG("initalize complete. ret=%d\n", 1);
     }
 
     /* スタート待機 */
@@ -181,7 +176,7 @@ void main_task(intptr_t unused)
         }
         else
         {
-            forward = 30; /* 前進命令 */
+            forward = 70; /* 前進命令 */
             if (ev3_color_sensor_get_reflect(color_sensor) >= (LIGHT_WHITE + LIGHT_BLACK)/2)
             {
                 turn = -80 * _EDGE; /* 右旋回命令　(右コースは逆) */
@@ -191,7 +186,7 @@ void main_task(intptr_t unused)
                 turn =  80 * _EDGE; /* 左旋回命令　(右コースは逆) */
             }
         }
-
+        //左右同時旋回
         /* 左右モータでロボットのステアリング操作を行う */
         ev3_motor_steer(
             left_motor,
@@ -200,7 +195,7 @@ void main_task(intptr_t unused)
             (int)turn
         );
 
-        tslp_tsk(4 * 1000U); /* 4msec周期起動 */
+        tslp_tsk(8 * 1000U); /* 4msec周期起動 */
     }
     ev3_motor_stop(left_motor, false);
     ev3_motor_stop(right_motor, false);

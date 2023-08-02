@@ -11,6 +11,7 @@
 #include "ev3api.h"
 #include "app.h"
 #include "etroboc_ext.h"
+#include "common.h"
 
 #if defined(BUILD_MODULE)
     #include "module_cfg.h"
@@ -67,9 +68,12 @@ static const sensor_port_t
 static const motor_port_t
     left_motor      = EV3_PORT_C,
     right_motor     = EV3_PORT_B;
+    centar_motor     = EV3_PORT_D;
+    
 
 static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
-static FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
+//static FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
+int flag_turn;
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
 /* sample_c1マクロ */
@@ -116,6 +120,10 @@ void main_task(intptr_t unused)
     /* モーター出力ポートの設定 */
     ev3_motor_config(left_motor, LARGE_MOTOR);
     ev3_motor_config(right_motor, LARGE_MOTOR);
+    ev3_motor_config(centar_motor, LARGE_MOTOR);
+
+    //テールモーター固定
+    ev3_motor_stop(centar_motor,true);
 
     if (_bt_enabled)
     {
@@ -170,32 +178,49 @@ void main_task(intptr_t unused)
     {
         if (ev3_button_is_pressed(BACK_BUTTON)) break;
 
-        if (sonar_alert() == 1) /* 障害物検知 */
-        {
-            forward = turn = 0; /* 障害物を検知したら停止 */
+        
+        //if (sonar_alert() == 1) /* 障害物検知 */
+        //{
+        //    forward = turn = 0; /* 障害物を検知したら停止 */
+        //}
+        if(0){
+
         }
         else
         {
-            forward = 70; /* 前進命令 */
+            forward = 30; /* 前進命令 */
             if (ev3_color_sensor_get_reflect(color_sensor) >= (LIGHT_WHITE + LIGHT_BLACK)/2)
             {
-                turn = -80 * _EDGE; /* 右旋回命令　(右コースは逆) */
+                flag_turn=1;
+
+
+                //turn = -80 * _EDGE;  右旋回命令　(右コースは逆) 
+                //                    _EDGE=1    
+                //
             }
             else
             {
-                turn =  80 * _EDGE; /* 左旋回命令　(右コースは逆) */
+                flag_turn=-1;
+                //turn =  80 * _EDGE;  左旋回命令　(右コースは逆) 
+                //                    _EDGE=1
+                //
             }
         }
-        //左右同時旋回
-        /* 左右モータでロボットのステアリング操作を行う */
-        ev3_motor_steer(
-            left_motor,
-            right_motor,
-            (int)forward,
-            (int)turn
-        );
 
-        tslp_tsk(8 * 1000U); /* 4msec周期起動 */
+        
+        //while(1){
+        //    ev3_motor_rotate(left_motor,360,40,true);
+
+        //    tslp_tsk(4 * 1000000U); /* 4msec周期起動 */
+        //    ev3_motor_rotate(right_motor,360,40,true);
+
+        //    tslp_tsk(4 * 1000000U); /* 4msec周期起動 */
+        //}
+        
+
+        motor_steer_by_ratio(30, 80);
+        
+        tslp_tsk(4000 * 1000U); /* 4msec周期起動 */
     }
     ev3_motor_stop(left_motor, false);
     ev3_motor_stop(right_motor, false);
@@ -207,6 +232,73 @@ void main_task(intptr_t unused)
     }
 
     ext_tsk();
+}
+//*****************************************************************************
+// 関数名 : motor_steer
+// 引数 :   flagturn(1- 右旋回, -1- 左旋回) motor_power=モーターパワー(-100~100)
+// 返り値 : なし
+// 概要 :　
+//*****************************************************************************
+void motor_steer(int flag_turn, int motor_power){
+    if(flag_turn==1){
+            //左モーターを動かす
+            ev3_motor_set_power(EV3_PORT_C,motor_power);
+            ev3_motor_stop(EV3_PORT_B,true);
+            LOG_D_DEBUG("Left turn\r\n");
+            
+
+        }else if(flag_turn==-1){
+            //右モーターを動かす
+            ev3_motor_set_power(EV3_PORT_B,motor_power);
+            ev3_motor_stop(EV3_PORT_C,true);
+            LOG_D_DEBUG("Right turn\r\n");
+            
+        }
+}
+
+//*****************************************************************************
+// 関数名 : motor_steer_by_degree
+// 引数 :   motor_number=モーターナンバー(左モーター:1 右モーター: -1)　
+//          motor_degree=回転角(°)
+//          motor_power=モーターパワー(-100~100)
+// 返り値 : なし
+// 概要 :　
+//*****************************************************************************
+void motor_steer_by_degree(int flag_turn, int motor_degree, int motor_power){
+    if(flag_turn==1){
+            //左モーターを動かす
+            ev3_motor_rotate(EV3_PORT_B, motor_degree, motor_power, true);
+            ev3_motor_stop(EV3_PORT_B,false);
+            LOG_D_DEBUG("Left turn\r\n");
+            
+
+        }else if(flag_turn==-1){
+            //右モーターを動かす
+            ev3_motor_rotate(EV3_PORT_C, motor_degree, motor_power, true);
+            ev3_motor_stop(EV3_PORT_C,false);
+            LOG_D_DEBUG("Left turn\r\n");
+            
+        }
+}
+
+//*****************************************************************************
+// 関数名 : motor_steer_by_ratio
+// 引数 :   steerRatio モーター回転比率　(50~ -50)
+//          power      モーターパワー(0 ~100)
+// 返り値 : なし
+// 概要 :　
+//*****************************************************************************
+void motor_steer_by_ratio(int steerRatio, int power){
+
+    int const_steer_ratio=50;
+
+    ev3_motor_set_power(EV3_PORT_C, (int)(const_steer_ratio+ steerRatio*power/100));
+    ev3_motor_set_power(EV3_PORT_B, (int)(const_steer_ratio- steerRatio*power/100));
+    LOG_D_DEBUG("C= %d\n", (int)(const_steer_ratio+ steerRatio*power/100));
+    LOG_D_DEBUG("B= %d\n", (int)(const_steer_ratio- steerRatio*power/100));
+
+
+    
 }
 
 //*****************************************************************************

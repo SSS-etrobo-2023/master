@@ -1,0 +1,82 @@
+
+
+/**ev3_motor_steerメソッド
+eft_motor	左モータのモータポート番号
+right_motor	右モータのモータポート番号
+power	モータのパワー．範囲：-100から+100．マイナスの値は後退．
+turn_ratio	ステアリングの度合い．範囲：-100から+100．
+マイナスの値は左への転回，プラスの値は右への転回になる． 
+具体的に言えば，このパラメータはこの左右モータのパワーの差の度合いである．例えば，turn_ratio は+25である場合， 
+左モータのパワーはpower で，右モータのパワーはpower の75%になり，ロボットは右へ転回する．
+*/
+//左右同時旋回
+/* 左右モータでロボットのステアリング操作を行う */
+ev3_motor_steer(
+    left_motor,
+    right_motor,
+    (int)forward,
+    (int)turn
+);
+
+/**ev3_motor_set_powerメソッド
+モータのパワーを設定する
+
+引数
+port	モータポート番号
+power	モータのフルパワーのパーセント値．
+範囲：-100から+100．マイナスの値でモータを逆方向に回転させることができる．
+戻り値
+E_OK	正常終了
+E_ID	不正のモータポート番号
+E_OBJ	モータ未接続
+Start the motor
+*/
+
+/**ev3_motor_rotate()メソッド
+ev3_motor_rotate	(	motor_port_t 	port,
+    int 	degrees,
+    uint32_t 	speed_abs,
+    bool_t 	blocking 
+)	
+モータを指定した角度だけ回転させる
+
+引数
+port	モータポート番号
+degrees	回転角度，マイナスの値でモータを逆方向に回転させることができる
+speed_abs	回転速度，モータポートのフルスピードのパーセント値．範囲：0から+100．
+blocking	true (関数は回転が完了してからリターン)，false (関数は回転操作を待たずにリターン)
+戻り値
+E_OK	正常終了
+E_ID	不正のモータポート番号
+E_OBJ	モータ未接続
+
+/**ev3_motor_reset_countsメソッド
+ev3_motor_reset_counts(motor_port_t port)	
+引数
+port	モータポート番号
+
+モータの角位置をゼロにリセットする．
+
+モータの角位置センサの値を設定するだけ，モータの実際のパワーと位置に影響を与えない．
+
+--**bluetooth **--
+
+ev3_bluetooth_is_connected()
+Bluetooth (Serial Port Profile)が接続されているかどうかをチェックする．
+
+戻り値
+true	接続済み．Bluetooth仮想シリアルポートで通信できる．
+false	接続切れ
+
+
+
+ev3_serial_open_file()
+FILE* ev3_serial_open_file	(	serial_port_t 	port	)	
+シリアルポートをファイルとしてオープンする．
+
+失敗の場合，NULLを返す（エラーログが出力される）．
+
+引数
+port	シリアルポート番号
+戻り値
+シリアルポートのファイル
