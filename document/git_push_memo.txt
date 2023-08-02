@@ -1,0 +1,38 @@
+■個人用のブランチを作成し、プッシュする手順
+
+git stash   → 現在の修正をよけておく
+git checkout -b <ブランチ名>
+git push --set-upstream origin <ブランチ名>
+git push -u origin
+git stash pop  → よけた修正を戻す
+
+git status
+
+git add <ファイル名> <ファイル名> ...
+または
+git add -u
+
+git status
+→ untracked file 以外が changes to be commited になること
+→ untracked file に指定するファイルがある場合は、直接ファイル名を指定する
+
+git commit -m "コメント"
+git log   →  コミットされたこと確認
+git show  →  コミット内容確認
+git push origin <ブランチ名>  →  プッシュ完了
+
+
+
+●以降はメモ
+Username : SSS-etrobo-2023
+Password : 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
+
+git stash
+git stash pop
+は
+git diff > /home/user/<ファイル名>.patch
+git checkout .
+patch -up1 < /home/user/<ファイル名>.patch
+でも代替可能
+(その日の終わりに日付のパッチで修正を保存しておく、
+ ある程度うまくいったときの修正を保存しておく、などの使い方もあり)
