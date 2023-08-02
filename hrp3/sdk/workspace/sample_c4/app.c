@@ -226,8 +226,8 @@ void main_task(intptr_t unused)
     /**
     * Main loop
     */
-   float Kp = 5;
-   float Kd = 4;
+   float Kp = 3.2;
+   float Kd = 1;
    rgb_raw_t main_rgb;
    float sensor = 0;
    float sensor_dt = 0;
@@ -251,7 +251,7 @@ void main_task(intptr_t unused)
         {
             forward = 30; /* 前進命令 */
             ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
-            if(count % 5 == 0){
+            if(count % 1 == 0){
                 sensor_dt = sensor_diff -ev3_color_sensor_get_reflect(color_sensor);
                 sensor_diff = ev3_color_sensor_get_reflect(color_sensor);   
             }
@@ -282,14 +282,22 @@ void main_task(intptr_t unused)
                 turn *= -1;
             }
         }
+        if(turn > forward){
+            turn = forward;
+        }else if(turn < -forward){
+            turn = -forward;
+        }
 
         /* 左右モータでロボットのステアリング操作を行う */
-        ev3_motor_steer(
+        ev3_motor_set_power(
             left_motor,
-            right_motor,
-            (int)forward,
-            (int)turn
+            (int)(forward + turn)
         );
+        ev3_motor_set_power(
+            right_motor,
+            (int)(forward - turn)
+        );
+
         if(count%40 == 1){
             LOG_D_DEBUG("forward = %d",forward);
             LOG_D_DEBUG("turn = %d",turn);
