@@ -78,8 +78,8 @@ static FILE     *bt = NULL;     /* Bluetoothファイルハンドル */
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
 /* sample_c1マクロ */
-#define LIGHT_WHITE  64         /* 白色の光センサ値 */
-#define LIGHT_BLACK  2          /* 黒色の光センサ値 */
+int LIGHT_WHITE = 42;         /* 白色の光センサ値 */
+int LIGHT_BLACK = 2;        /* 黒色の光センサ値 */
 /* sample_c2マクロ */
 #define SONAR_ALERT_DISTANCE 30 /* 超音波センサによる障害物検知距離[cm] */
 /* sample_c4マクロ */
@@ -138,7 +138,7 @@ void main_task(intptr_t unused)
     _log("Go to the start, ready?");
     if (_SIM)   _log("Hit SPACE bar to start");
     else        _log("Tap Touch Sensor to start");
-
+    LOG_D_DEBUG("initalize complete. ret=%d\n", 1333);
     //ログ出力
     if (_bt_enabled)
     {
@@ -174,9 +174,51 @@ void main_task(intptr_t unused)
     ev3_led_set_color(LED_GREEN); /* スタート通知 */
     
     tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+
+    //白色取得
+    rgb_raw_t white_rgb; 
+    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
     while(1)
     {
         //モーターストップからの2回目のタッチ
+        if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
+            ev3_color_sensor_get_rgb_raw(color_sensor, &white_rgb);
+            LIGHT_WHITE = ev3_color_sensor_get_reflect(color_sensor);
+            LOG_D_DEBUG("whitereflect = %d\n",LIGHT_WHITE);
+            LOG_D_DEBUG("whitecolor's rgb =%u,%u,%u\n", white_rgb.r,white_rgb.g,white_rgb.b);
+            break;
+        }
+    }
+    //黒色取得
+    rgb_raw_t black_rgb; 
+    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+    while(1)
+    {
+        //モーターストップからの3回目のタッチ
+        if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
+            ev3_color_sensor_get_rgb_raw(color_sensor,&black_rgb);
+            LIGHT_BLACK = ev3_color_sensor_get_reflect(color_sensor);
+            LOG_D_DEBUG("blackreflect = %d\n",LIGHT_BLACK);
+            LOG_D_DEBUG("blackcolor's rgb =%u,%u,%u\n", black_rgb.r,black_rgb.g,black_rgb.b);
+            break;
+        }
+    }
+    //青色取得
+    rgb_raw_t blue_rgb; 
+    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+    while(1)
+    {
+        //モーターストップからの4回目のタッチ
+        if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
+            ev3_color_sensor_get_rgb_raw(color_sensor,&blue_rgb);
+            LOG_D_DEBUG("bluecolor's rgb =%u,%u,%u\n", blue_rgb.r,blue_rgb.g,blue_rgb.b);
+            break;
+        }
+    }
+    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+    while(1)
+    {
+        //モーターストップからの5回目のタッチ
         if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
             break;
         }
@@ -184,11 +226,17 @@ void main_task(intptr_t unused)
     /**
     * Main loop
     */
-   float Kp = 2;
-   float Kd = 0.5;
-   float sensor = 30;
-   float sensor_dt = 5;
+   float Kp = 5;
+   float Kd = 4;
+   rgb_raw_t main_rgb;
+   float sensor = 0;
+   float sensor_dt = 0;
    float curb = 0.0;
+   float sensor_diff = (LIGHT_WHITE + LIGHT_BLACK)/2;
+   
+   float weight;
+   int blue_count = 0;
+   int is_blue = 0;
 
    int count = 0;
     while(1)
@@ -202,29 +250,37 @@ void main_task(intptr_t unused)
         else
         {
             forward = 30; /* 前進命令 */
-            
-            if(count % 3 == 0){
-                sensor_dt = ev3_color_sensor_get_reflect(color_sensor) - sensor_dt;
+            ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
+            if(count % 5 == 0){
+                sensor_dt = sensor_diff -ev3_color_sensor_get_reflect(color_sensor);
+                sensor_diff = ev3_color_sensor_get_reflect(color_sensor);   
             }
+            sensor_dt = sensor_diff -ev3_color_sensor_get_reflect(color_sensor);
+            sensor_diff = ev3_color_sensor_get_reflect(color_sensor);
+            
             sensor = ev3_color_sensor_get_reflect(color_sensor);
 
-            curb = Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor) - Kd * (sensor_dt);
-            turn = curb;
-            // if (ev3_color_sensor_get_reflect(color_sensor) >= (LIGHT_WHITE + LIGHT_BLACK)/2)
-            // {
-            //     turn = -40 * _EDGE; /* 右旋回命令　(右コースは逆) */
-            // }
-            // else
-            // {
-            //     turn =  40 * _EDGE; /* 左旋回命令　(右コースは逆) */
-            // }
-        }
+            if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > blue_rgb.b * 3/4 && is_blue == 0){
+                is_blue = 1;
+                LOG_D_DEBUG("isBlue");
+            }
+            if(!((4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > blue_rgb.b * 3/4 && is_blue)
+            || (main_rgb.r > white_rgb.r/2
+            || main_rgb.g > white_rgb.g/2
+            || main_rgb.b > white_rgb.b/2))
+            && is_blue == 1){
+                is_blue = 0;
+                blue_count++;
+                LOG_D_DEBUG("isNOTBlue");
+            }
 
-        if(count % 20 == 0){
-            LOG_D_DEBUG("kp=%f\n", Kp); 
-            LOG_D_DEBUG("sensor=%f\n", sensor); 
-            LOG_D_DEBUG("curb=%f\n", curb); 
-            LOG_D_DEBUG("turn=%d\n", turn); 
+            curb = Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor) - Kd * (sensor_dt);
+            turn = -curb;
+            if(blue_count == 3
+            ){
+                LOG_D_DEBUG("直進");
+                turn *= -1;
+            }
         }
 
         /* 左右モータでロボットのステアリング操作を行う */
@@ -234,8 +290,12 @@ void main_task(intptr_t unused)
             (int)forward,
             (int)turn
         );
+        if(count%40 == 1){
+            LOG_D_DEBUG("forward = %d",forward);
+            LOG_D_DEBUG("turn = %d",turn);
+        }
 
-        tslp_tsk(4 * 1000U); /* 4msec周期起動 */
+        tslp_tsk(8 * 1000U); /* 2msec周期起動 */
         count++;
     }
    
