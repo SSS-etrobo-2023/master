@@ -6,7 +6,7 @@
 KERNELDIR = ../..
 TARGETDIR = $(KERNELDIR)/target/ev3_gcc
 LOADERDIR = $(KERNELDIR)/target/ev3_gcc/dmloader
-APPLDIR   = ../workspace/sample_c4
+APPLDIR   = ../workspace/sample_c4colordet04
 APPL_DIR  = $(APPLDIR)
 SRCDIRS  += $(APPL_DIR) $(KERNELDIR)/target/ev3_gcc/TLSF-2.4.6/src
 

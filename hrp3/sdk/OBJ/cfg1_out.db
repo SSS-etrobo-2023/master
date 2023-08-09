@@ -34,5 +34,5 @@ INDEXi{
 ;I"ATT_MOD;T;@Ÿ;i
 @ƒI""t_perror.o";T;i{
 ;I"ATT_MOD;T;@Ÿ;i@ƒI""strerror.o";T;i{
-;I"ATT_MOD;T;@Ÿ;i@ƒI""libc.a";T;i{;I"#include "app.h";T;I"#../workspace/sample_c4/app.cfg;T;i{;I"CRE_TSK;T;@¯;i@rI"MAIN_TASK;T@tI"TA_ACT;T@vI"0;T@xI"main_task;T@zI"TMIN_APP_TPRI + 1;T@|I"STACK_SIZE;T@~I"	NULL;T;I"TDOM_APP;T;i{;I"CRE_TSK;T;@¯;i@rI"BT_TASK;T@tI"TA_NULL;T@vI"0;T@xI"bt_task;T@zI"TMIN_APP_TPRI + 2;T@|I"STACK_SIZE;T@~I"	NULL;T;@¹;i{
+;I"ATT_MOD;T;@Ÿ;i@ƒI""libc.a";T;i{;I"#include "app.h";T;I"-../workspace/sample_c4colordet04/app.cfg;T;i{;I"CRE_TSK;T;@¯;i@rI"MAIN_TASK;T@tI"TA_ACT;T@vI"0;T@xI"main_task;T@zI"TMIN_APP_TPRI + 1;T@|I"STACK_SIZE;T@~I"	NULL;T;I"TDOM_APP;T;i{;I"CRE_TSK;T;@¯;i@rI"BT_TASK;T@tI"TA_NULL;T@vI"0;T@xI"bt_task;T@zI"TMIN_APP_TPRI + 2;T@|I"STACK_SIZE;T@~I"	NULL;T;@¹;i{
 ;I"ATT_MOD;T;@¯;i@ƒI""app.o";T;i:domainId{I"TDOM_KERNEL;TiúI"TDOM_NONE;TiùI"TDOM_APP;Ti

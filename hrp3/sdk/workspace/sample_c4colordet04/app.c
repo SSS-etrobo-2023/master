@@ -481,13 +481,13 @@ void turn_90_degree(int flag_turn){
 
     if(flag_turn==1){
         //右旋回
-        ev3_motor_rotate(right_motor, rotate_degree , 30, false);
-        ev3_motor_rotate(left_motor , -rotate_degree, 30, true);
+        ev3_motor_rotate(right_motor, rotate_degree , 20, false);
+        ev3_motor_rotate(left_motor , -rotate_degree, 20, true);
 
     }else if(flag_turn==2){
         //左旋回
-        ev3_motor_rotate(left_motor, rotate_degree , 30, false);
-        ev3_motor_rotate(right_motor , -rotate_degree, 30, true);
+        ev3_motor_rotate(left_motor , rotate_degree , 20, false);
+        ev3_motor_rotate(right_motor , -rotate_degree, 20, true);
 
     }
 
@@ -516,8 +516,8 @@ void trace_node(){
 
 
     //ブロックサークル間距離　移動
-    ev3_motor_rotate(right_motor, degree_to_move_node , 30, false);
-    ev3_motor_rotate(left_motor , degree_to_move_node , 30, true);
+    ev3_motor_rotate(right_motor, degree_to_move_node , 20, false);
+    ev3_motor_rotate(left_motor , degree_to_move_node , 20, true);
 
     while(1){
 
