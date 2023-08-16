@@ -226,7 +226,7 @@ void main_task(intptr_t unused)
     /**
     * Main loop
     */
-   float Kp = 3.2;
+   float Kp = 4;
    float Kd = 1;
    rgb_raw_t main_rgb;
    float sensor = 0;
@@ -260,6 +260,7 @@ void main_task(intptr_t unused)
             
             sensor = ev3_color_sensor_get_reflect(color_sensor);
 
+            //青かどうかの判定
             if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > blue_rgb.b * 3/4 && is_blue == 0){
                 is_blue = 1;
                 LOG_D_DEBUG("isBlue");
@@ -274,19 +275,21 @@ void main_task(intptr_t unused)
                 LOG_D_DEBUG("isNOTBlue");
             }
 
+            //曲がり角度の決定
             curb = Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor) - Kd * (sensor_dt);
             turn = -curb;
+
             if(blue_count == 3
             ){
                 LOG_D_DEBUG("直進");
                 turn *= -1;
             }
         }
-        if(turn > forward){
-            turn = forward;
-        }else if(turn < -forward){
-            turn = -forward;
-        }
+        // if(turn > forward){
+        //     turn = forward;
+        // }else if(turn < -forward){
+        //     turn = -forward;
+        // }
 
         /* 左右モータでロボットのステアリング操作を行う */
         ev3_motor_set_power(
@@ -301,6 +304,7 @@ void main_task(intptr_t unused)
         if(count%40 == 1){
             LOG_D_DEBUG("forward = %d",forward);
             LOG_D_DEBUG("turn = %d",turn);
+            LOG_D_DEBUG("test");
         }
 
         tslp_tsk(8 * 1000U); /* 2msec周期起動 */
