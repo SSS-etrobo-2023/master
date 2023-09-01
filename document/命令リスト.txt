@@ -1,0 +1,774 @@
+/*
+マトリクス移動命令
+パターン1 Lコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+
+                    };
+
+/*
+マトリクス移動命令
+パターン1 Lコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+
+
+/*
+マトリクス移動命令
+パターン1 Lコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+
+/*
+マトリクス移動命令
+パターン2 Lコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン2 Lコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+
+/*
+マトリクス移動命令
+パターン2 Lコース
+赤パターン　から開始
+赤ブロック　緑パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン3 Lコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン3 Lコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン3 Lコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン4 Lコース
+赤パターン　から開始
+赤ブロック　緑パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン4 Lコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン4 Lコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン5 Lコース
+赤パターン　から開始
+赤ブロック　緑パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン5 Lコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン5 Lコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    get_red_block
+                    };
+
+
+
+/*
+マトリクス移動命令
+パターン1 Rコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+
+                    };
+
+/*
+マトリクス移動命令
+パターン1 Rコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン1 Rコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン2 Rコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+
+/*
+マトリクス移動命令
+パターン2 Rコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン2 Rコース
+赤パターン　から開始
+赤ブロック　緑パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン3 Rコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン3 Rコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン3 Rコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン4 Rコース
+赤パターン　から開始
+赤ブロック　緑パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン4 Rコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン4 Rコース
+赤パターン　から開始
+赤ブロック　黄パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン5 Rコース
+赤パターン　から開始
+赤ブロック　緑パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン5 Rコース
+赤パターン　から開始
+赤ブロック　青パターン上の時
+*/
+int matrix_order[]={turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*
+マトリクス移動命令
+パターン5 Lコース
+赤パターン　から開始
+赤ブロック　赤パターン上の時
+*/
+int matrix_order[]={move_forward,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    move_forward,
+                    move_forward,
+                    get_red_block
+                    };
+
+/*旧命令
+マトリクス移動命令
+青ブロックから開始
+パターン4赤ブロック緑上の時
+*/
+int matrix_order[]={move_forward,
+                    move_forward,
+                    push_blue_block,
+                    turn_right,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    push_blue_block,
+                    turn_left,
+                    move_forward,
+                    turn_right,
+                    move_forward,
+                    turn_left,
+                    move_forward,
+                    get_red_block
+                    };
