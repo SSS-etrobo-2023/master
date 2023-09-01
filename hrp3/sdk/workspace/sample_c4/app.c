@@ -177,45 +177,45 @@ void main_task(intptr_t unused)
     tslp_tsk(1000 * 1000U); /* 10msecウェイト */
 
     //白色取得
-    rgb_raw_t white_rgb; 
-    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
-    while(1)
-    {
-        //モーターストップからの2回目のタッチ
-        if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
-            ev3_color_sensor_get_rgb_raw(color_sensor, &white_rgb);
-            LIGHT_WHITE = ev3_color_sensor_get_reflect(color_sensor);
-            LOG_D_DEBUG("whitereflect = %d\n",LIGHT_WHITE);
-            LOG_D_DEBUG("whitecolor's rgb =%u,%u,%u\n", white_rgb.r,white_rgb.g,white_rgb.b);
-            break;
-        }
-    }
-    //黒色取得
-    rgb_raw_t black_rgb; 
-    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
-    while(1)
-    {
-        //モーターストップからの3回目のタッチ
-        if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
-            ev3_color_sensor_get_rgb_raw(color_sensor,&black_rgb);
-            LIGHT_BLACK = ev3_color_sensor_get_reflect(color_sensor);
-            LOG_D_DEBUG("blackreflect = %d\n",LIGHT_BLACK);
-            LOG_D_DEBUG("blackcolor's rgb =%u,%u,%u\n", black_rgb.r,black_rgb.g,black_rgb.b);
-            break;
-        }
-    }
-    //青色取得
-    rgb_raw_t blue_rgb; 
-    tslp_tsk(1000 * 1000U); /* 10msecウェイト */
-    while(1)
-    {
-        //モーターストップからの4回目のタッチ
-        if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
-            ev3_color_sensor_get_rgb_raw(color_sensor,&blue_rgb);
-            LOG_D_DEBUG("bluecolor's rgb =%u,%u,%u\n", blue_rgb.r,blue_rgb.g,blue_rgb.b);
-            break;
-        }
-    }
+    rgb_raw_t white_rgb = {149,102,198};
+    // tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+    // while(1)
+    // {
+    //     //モーターストップからの2回目のタッチ
+    //     if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
+    //         ev3_color_sensor_get_rgb_raw(color_sensor, &white_rgb);
+    //         LIGHT_WHITE = ev3_color_sensor_get_reflect(color_sensor);
+    //         LOG_D_DEBUG("whitereflect = %d\n",LIGHT_WHITE);
+    //         LOG_D_DEBUG("whitecolor's rgb =%u,%u,%u\n", white_rgb.r,white_rgb.g,white_rgb.b);
+    //         break;
+    //     }
+    // }
+    // //黒色取得
+    rgb_raw_t black_rgb = {8,6,13} ; 
+    // tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+    // while(1)
+    // {
+    //     //モーターストップからの3回目のタッチ
+    //     if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
+    //         ev3_color_sensor_get_rgb_raw(color_sensor,&black_rgb);
+    //         LIGHT_BLACK = ev3_color_sensor_get_reflect(color_sensor);
+    //         LOG_D_DEBUG("blackreflect = %d\n",LIGHT_BLACK);
+    //         LOG_D_DEBUG("blackcolor's rgb =%u,%u,%u\n", black_rgb.r,black_rgb.g,black_rgb.b);
+    //         break;
+    //     }
+    // }
+    // //青色取得
+    rgb_raw_t blue_rgb = {25,10,102}; 
+    // tslp_tsk(1000 * 1000U); /* 10msecウェイト */
+    // while(1)
+    // {
+    //     //モーターストップからの4回目のタッチ
+    //     if(ev3_touch_sensor_is_pressed(touch_sensor) == 1){
+    //         ev3_color_sensor_get_rgb_raw(color_sensor,&blue_rgb);
+    //         LOG_D_DEBUG("bluecolor's rgb =%u,%u,%u\n", blue_rgb.r,blue_rgb.g,blue_rgb.b);
+    //         break;
+    //     }
+    // }
     tslp_tsk(1000 * 1000U); /* 10msecウェイト */
     while(1)
     {
@@ -227,7 +227,7 @@ void main_task(intptr_t unused)
     /**
     * Main loop
     */
-   float Kp = 2.8;
+   float Kp = 3.3;
    float Kd = 0;
    float P;
    float D;
@@ -236,10 +236,13 @@ void main_task(intptr_t unused)
    float sensor_dt = 0;
    float curb = 0.0;
    float sensor_diff = (LIGHT_WHITE + LIGHT_BLACK)/2;
+   float sensor_reflect = 0;
    
    float weight;
    int blue_count = 0;
    int is_blue = 0;
+
+   int wait_flame = 120;
 
    int count = 0;
     while(1)
@@ -252,11 +255,15 @@ void main_task(intptr_t unused)
         }
         else
         {
-            forward = 25; /* 前進命令 */
+            forward = 40; /* 前進命令 */
             ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
 
-            sensor_dt = sensor_diff -ev3_color_sensor_get_reflect(color_sensor);
-            sensor_diff = ev3_color_sensor_get_reflect(color_sensor);
+            sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
+            if(sensor_reflect > LIGHT_WHITE){
+                sensor_reflect = LIGHT_WHITE;
+            }
+            sensor_dt = sensor_diff - sensor_reflect;
+            sensor_diff = sensor_reflect;
 
             sensor = ev3_color_sensor_get_reflect(color_sensor);
 
@@ -283,7 +290,9 @@ void main_task(intptr_t unused)
             //D制御
             D = (sensor_dt);
             //曲がり角度の決定
-            curb = Kp * P * (fabsf(P) / ((LIGHT_WHITE + LIGHT_BLACK)/2)) - Kd * D;
+            curb = Kp * P 
+            // * (fabsf(P) / ((LIGHT_WHITE + LIGHT_BLACK)/2.2))
+             - Kd * D;
             turn = -curb;
 
             if(blue_count == 3
@@ -291,37 +300,43 @@ void main_task(intptr_t unused)
                 LOG_D_DEBUG("直進");
                 turn *= -1;
             }
-            if(blue_count == 4 && count < 80
+            if(blue_count == 4 && count < wait_flame
             ){
                 LOG_D_DEBUG("直進");
                 turn *= 1;
                 count++;
             }
-            if(blue_count >= 4 && count >= 80){
+            if(blue_count >= 4 && count >= wait_flame){
                 turn *= -1;
             }
         }
 
         /* 左右モータでロボットのステアリング操作を行う */
-        if(turn >= 0){
-            ev3_motor_set_power(
-                left_motor,
-                (int)(forward + turn / 4)
-            );
-            ev3_motor_set_power(
-                right_motor,
-                (int)(forward - turn * 2 / 3)
-            );
-        }else{
-            ev3_motor_set_power(
-                left_motor,
-                (int)(forward + turn * 2 / 3)
-            );
-            ev3_motor_set_power(
-                right_motor,
-                (int)(forward - turn / 4)
-            );
-        }
+        // if(turn >= 0){
+        //     ev3_motor_set_power(
+        //         left_motor,
+        //         (int)(forward + turn)
+        //     );
+        //     ev3_motor_set_power(
+        //         right_motor,
+        //         (int)(forward - turn/2)
+        //     );
+        // }else{
+        //     ev3_motor_set_power(
+        //         left_motor,
+        //         (int)(forward + turn/2)
+        //     );
+        //     ev3_motor_set_power(
+        //         right_motor,
+        //         (int)(forward - turn)
+        //     );
+        // }
+        ev3_motor_steer(
+            left_motor,
+            right_motor,
+            forward,
+            turn
+        );
         
         LOG_D_DEBUG("forward = %d",forward);
         LOG_D_DEBUG("turn = %d",turn);
