@@ -13,6 +13,7 @@
 #include "etroboc_ext.h"
 
 #include "common.h"
+#include <math.h>
 
 #if defined(BUILD_MODULE)
     #include "module_cfg.h"
@@ -226,8 +227,10 @@ void main_task(intptr_t unused)
     /**
     * Main loop
     */
-   float Kp = 4;
-   float Kd = 1;
+   float Kp = 2.8;
+   float Kd = 0;
+   float P;
+   float D;
    rgb_raw_t main_rgb;
    float sensor = 0;
    float sensor_dt = 0;
@@ -249,15 +252,12 @@ void main_task(intptr_t unused)
         }
         else
         {
-            forward = 30; /* 前進命令 */
+            forward = 25; /* 前進命令 */
             ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
-            if(count % 1 == 0){
-                sensor_dt = sensor_diff -ev3_color_sensor_get_reflect(color_sensor);
-                sensor_diff = ev3_color_sensor_get_reflect(color_sensor);   
-            }
+
             sensor_dt = sensor_diff -ev3_color_sensor_get_reflect(color_sensor);
             sensor_diff = ev3_color_sensor_get_reflect(color_sensor);
-            
+
             sensor = ev3_color_sensor_get_reflect(color_sensor);
 
             //青かどうかの判定
@@ -275,8 +275,15 @@ void main_task(intptr_t unused)
                 LOG_D_DEBUG("isNOTBlue");
             }
 
+            //P制御
+            if(sensor > LIGHT_WHITE){
+                sensor = LIGHT_WHITE;
+            }
+            P = ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor);
+            //D制御
+            D = (sensor_dt);
             //曲がり角度の決定
-            curb = Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor) - Kd * (sensor_dt);
+            curb = Kp * P * (fabsf(P) / ((LIGHT_WHITE + LIGHT_BLACK)/2)) - Kd * D;
             turn = -curb;
 
             if(blue_count == 3
@@ -284,31 +291,45 @@ void main_task(intptr_t unused)
                 LOG_D_DEBUG("直進");
                 turn *= -1;
             }
+            if(blue_count == 4 && count < 80
+            ){
+                LOG_D_DEBUG("直進");
+                turn *= 1;
+                count++;
+            }
+            if(blue_count >= 4 && count >= 80){
+                turn *= -1;
+            }
         }
-        // if(turn > forward){
-        //     turn = forward;
-        // }else if(turn < -forward){
-        //     turn = -forward;
-        // }
 
         /* 左右モータでロボットのステアリング操作を行う */
-        ev3_motor_set_power(
-            left_motor,
-            (int)(forward + turn)
-        );
-        ev3_motor_set_power(
-            right_motor,
-            (int)(forward - turn)
-        );
-
-        if(count%40 == 1){
-            LOG_D_DEBUG("forward = %d",forward);
-            LOG_D_DEBUG("turn = %d",turn);
-            LOG_D_DEBUG("test");
+        if(turn >= 0){
+            ev3_motor_set_power(
+                left_motor,
+                (int)(forward + turn / 4)
+            );
+            ev3_motor_set_power(
+                right_motor,
+                (int)(forward - turn * 2 / 3)
+            );
+        }else{
+            ev3_motor_set_power(
+                left_motor,
+                (int)(forward + turn * 2 / 3)
+            );
+            ev3_motor_set_power(
+                right_motor,
+                (int)(forward - turn / 4)
+            );
         }
+        
+        LOG_D_DEBUG("forward = %d",forward);
+        LOG_D_DEBUG("turn = %d",turn);
+        LOG_D_DEBUG("Kp = %f",Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor));
+        LOG_D_DEBUG("Kd = %f",- Kd * (sensor_dt));
+        LOG_D_DEBUG("test");
 
-        tslp_tsk(8 * 1000U); /* 2msec周期起動 */
-        count++;
+        tslp_tsk(4 * 1000U); /* 4msec周期起動 */
     }
    
     ev3_motor_stop(left_motor, false);
