@@ -119,7 +119,7 @@ int flag_turn;
 int color_reflect;
 
 //course種類 1-左コース 2-右コース
-int course_type=1;
+int course_type=2;
 
 
 #define REFLECT_LOG_SIZE 255
@@ -137,7 +137,7 @@ int reflect_ptr=0;
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
 /* sample_c1マクロ */
-static int  LIGHT_WHITE  = 42;         /* 白色の光センサ値 */
+static int  LIGHT_WHITE  = 36;         /* 白色の光センサ値 */
 static int  LIGHT_BLACK  = 2;          /* 黒色の光センサ値 */
 
 /* sample_c2マクロ */
@@ -154,24 +154,24 @@ static int  LIGHT_BLACK  = 2;          /* 黒色の光センサ値 */
 
 /* 色彩センサ　閾値 */
 /* 青 */
-#define THRE_B_OF_BLUE 40
+#define THRE_B_OF_BLUE 100
 #define THRE_G_OF_BLUE 60
 #define THRE_R_OF_BLUE 15
 
 /* 赤 */
-#define THRE_B_OF_RED 40
-#define THRE_G_OF_RED 50
-#define THRE_R_OF_RED 60
+#define THRE_B_OF_RED 75
+#define THRE_G_OF_RED 75
+#define THRE_R_OF_RED 90
 
 /* 緑 */
-#define THRE_B_OF_GREEN 40
-#define THRE_G_OF_GREEN 40
-#define THRE_R_OF_GREEN 20
+#define THRE_B_OF_GREEN 30
+#define THRE_G_OF_GREEN 90
+#define THRE_R_OF_GREEN 60
 
 /* 黄 */
-#define THRE_B_OF_YELLOW 30
-#define THRE_G_OF_YELLOW 45
-#define THRE_R_OF_YELLOW 45
+#define THRE_B_OF_YELLOW 150
+#define THRE_G_OF_YELLOW 150
+#define THRE_R_OF_YELLOW 60
 
 /* 黒 */
 #define THRE_B_OF_BLACK 25
@@ -179,9 +179,9 @@ static int  LIGHT_BLACK  = 2;          /* 黒色の光センサ値 */
 #define THRE_R_OF_BLACK 25
 
 /* 白 */
-#define THRE_B_OF_WHITE 120
-#define THRE_G_OF_WHITE 120
-#define THRE_R_OF_WHITE 120
+#define THRE_B_OF_WHITE 100
+#define THRE_G_OF_WHITE 100
+#define THRE_R_OF_WHITE 100
 
 /* カラーコード定義 */
 #define COLOR_CODE_RED    1
@@ -191,11 +191,6 @@ static int  LIGHT_BLACK  = 2;          /* 黒色の光センサ値 */
 #define COLOR_CODE_BLACK  5
 #define COLOR_CODE_WHITE  6
 #define COLOR_CODE_UNKNOWN  -1
-
-
-
-
-
 
 /* 関数プロトタイプ宣言 */
 static int sonar_alert(void);
@@ -269,9 +264,15 @@ void main_task(intptr_t unused)
     {
         //tail_control(TAIL_ANGLE_STAND_UP); /* 完全停止用角度に制御 */
 
-        if (bt_cmd == 1)
-        {
+        if (bt_cmd == 1) {
             break; /* リモートスタート */
+        } else if (bt_cmd == 2) {
+            /* 光取得用のデバッグ処理 */
+            rgb_raw_t dbg_raw;
+            ev3_color_sensor_get_rgb_raw(color_sensor, &dbg_raw);
+            LOG_D_DEBUG("R:%u, G:%u, B:%u\n", dbg_raw.r, dbg_raw.g, dbg_raw.b);
+            LOG_D_DEBUG("Reflect:%d\n", ev3_color_sensor_get_reflect(color_sensor));
+            bt_cmd = 0;
         }
 
         if (ev3_touch_sensor_is_pressed(touch_sensor) == 1)
@@ -308,7 +309,7 @@ void main_task(intptr_t unused)
 
 
     /* ライントレース */
-
+#if 0
     //白色取得
     rgb_raw_t white_rgb; 
     tslp_tsk(1000 * 1000U); /* 10msecウェイト */
@@ -361,10 +362,11 @@ void main_task(intptr_t unused)
             break;
         }
     }
+#endif
 
     /* コンフィグ 初期設定 */
-   float Kp = 2.8;
-   float Kd = 0;
+   float Kp = 2.80;
+   float Kd = 0.3;
    float P;
    float D;
    rgb_raw_t main_rgb;
@@ -372,10 +374,12 @@ void main_task(intptr_t unused)
    float sensor_dt = 0;
    float curb = 0.0;
    float sensor_diff = (LIGHT_WHITE + LIGHT_BLACK)/2;
+   float sensor_reflect = 0;
    
    float weight;
    int blue_count = 0;
    int is_blue = 0;
+   int wait_flame = 120;
 
    int count = 0;
     while(1)
@@ -389,24 +393,29 @@ void main_task(intptr_t unused)
             break;
         }
 
-        forward = 25; /* 前進命令 */
+        forward = 30; /* 前進命令 */
         ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
 
-        sensor_dt = sensor_diff -ev3_color_sensor_get_reflect(color_sensor);
-        sensor_diff = ev3_color_sensor_get_reflect(color_sensor);
+        sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
+        if(sensor_reflect > LIGHT_WHITE){
+            sensor_reflect = LIGHT_WHITE;
+        }
+
+        sensor_dt = sensor_diff - sensor_reflect;
+        sensor_diff = sensor_reflect;
 
         sensor = ev3_color_sensor_get_reflect(color_sensor);
 
         //青かどうかの判定
-        if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > blue_rgb.b * 3/4 && is_blue == 0){
+        if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > THRE_B_OF_BLUE * 3/4 && is_blue == 0){
             is_blue = 1;
             LOG_D_DEBUG("isBlue");
         }
         
-        if(!((4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > blue_rgb.b * 3/4 && is_blue)
-        || (main_rgb.r > white_rgb.r/2
-        || main_rgb.g > white_rgb.g/2
-        || main_rgb.b > white_rgb.b/2))
+        if(!((4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > THRE_B_OF_BLUE * 3/4 && is_blue)
+        || (main_rgb.r > 158
+        || main_rgb.g > 229
+        || main_rgb.b > 353))
         && is_blue == 1){
             is_blue = 0;
             blue_count++;
@@ -421,24 +430,36 @@ void main_task(intptr_t unused)
         //D制御
         D = (sensor_dt);
         //曲がり角度の決定
-        curb = Kp * P * (fabsf(P) / ((LIGHT_WHITE + LIGHT_BLACK)/2)) - Kd * D;
-        turn = -curb;
+        curb = Kp * P - Kd * D;
+        if(course_type == 1) {
+            turn = -curb;
+        } else {
+            turn = curb;
+        }
 
         if(blue_count == 3){
             LOG_D_DEBUG("直進");
             turn *= -1;
         }
 
-        if(blue_count == 4 && count < 80){
+        if(blue_count == 4 && count < wait_flame){
             LOG_D_DEBUG("直進");
             turn *= 1;
             count++;
         }
 
-        if(blue_count >= 4 && count >= 80){
+        if(blue_count >= 4 && count >= wait_flame){
             turn *= -1;
         }
 
+        ev3_motor_steer(
+            left_motor,
+            right_motor,
+            forward,
+            turn
+        );
+
+#if 0
         /* 左右モータでロボットのステアリング操作を行う */
         if(turn >= 0){
             ev3_motor_set_power(
@@ -460,7 +481,6 @@ void main_task(intptr_t unused)
             );
         }
         
-#if 0
         LOG_D_DEBUG("forward = %d",forward);
         LOG_D_DEBUG("turn = %d",turn);
         LOG_D_DEBUG("Kp = %f",Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor));
@@ -480,7 +500,7 @@ void main_task(intptr_t unused)
     tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
     //マトリクスに向かって移動する
-    move_to_matrix_start_pos(1);
+    move_to_matrix_start_pos(course_type);
     tslp_tsk(1000 * 1000U); /* 1000msec 停止*/
 
     //誤作動を防ぐため、一定距離進
@@ -512,8 +532,13 @@ void main_task(intptr_t unused)
     ev3_motor_rotate(left_motor , 40, 30, true);
 
     while(1){
-        ev3_motor_rotate(left_motor , 10, 20, false);
-        ev3_motor_rotate(right_motor , -10, 20, true);
+        if (course_type == 1) {
+            ev3_motor_rotate(left_motor , 10, 20, false);
+            ev3_motor_rotate(right_motor , -10, 20, true);
+        } else {
+        ev3_motor_rotate(left_motor , -10, 20, false);
+        ev3_motor_rotate(right_motor , 10, 20, true);
+        }
 
         read_color = ret_color_code();
         if (read_color == COLOR_CODE_BLACK) {
@@ -526,7 +551,7 @@ void main_task(intptr_t unused)
     }
 
     //マトリクス攻略
-    while(1)
+    while(0)
     {
         matrix_move_sequence(matrix_order, matrix_order_size);
         tslp_tsk(2 * 1000000U); /* 0.4msec周期起動 */
@@ -539,6 +564,8 @@ void main_task(intptr_t unused)
         fclose(bt);
     }
 
+    ev3_motor_set_power(left_motor, 0);
+    ev3_motor_set_power(right_motor, 0);
 
     ext_tsk();
 }
@@ -609,7 +636,7 @@ int isfound_red(){
     rgb_raw_t read_rgb;
     ev3_color_sensor_get_rgb_raw(color_sensor, &read_rgb);
 
-    if ((read_rgb.r >= 100) && (read_rgb.r > 1.5 * read_rgb.b) && (read_rgb.r > 1.5 * read_rgb.g)) {
+    if ((read_rgb.r >= THRE_R_OF_RED) && (read_rgb.r > 1.5 * read_rgb.b) && (read_rgb.r > 1.5 * read_rgb.g)) {
         return COLOR_CODE_RED;
     }
 
@@ -890,6 +917,9 @@ void bt_task(intptr_t unused)
             {
             case '1':
                 bt_cmd = 1;
+                break;
+            case '2':
+                bt_cmd = 2;
                 break;
             default:
                 break;
