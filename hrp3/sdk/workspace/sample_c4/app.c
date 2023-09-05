@@ -119,7 +119,7 @@ int flag_turn;
 int color_reflect;
 
 //course種類 1-左コース 2-右コース
-int course_type=2;
+int course_type=1;
 
 
 #define REFLECT_LOG_SIZE 255
@@ -137,7 +137,7 @@ int reflect_ptr=0;
 
 /* 下記のマクロは個体/環境に合わせて変更する必要があります */
 /* sample_c1マクロ */
-static int  LIGHT_WHITE  = 36;         /* 白色の光センサ値 */
+static int  LIGHT_WHITE  = 40;         /* 白色の光センサ値 */
 static int  LIGHT_BLACK  = 2;          /* 黒色の光センサ値 */
 
 /* sample_c2マクロ */
@@ -365,9 +365,11 @@ void main_task(intptr_t unused)
 #endif
 
     /* コンフィグ 初期設定 */
-   float Kp = 2.80;
-   float Kd = 0.3;
+   float Kp = 2.85;
+   float Ki = 0;
+   float Kd = 1.5;
    float P;
+   float I;
    float D;
    rgb_raw_t main_rgb;
    float sensor = 0;
@@ -427,10 +429,12 @@ void main_task(intptr_t unused)
             sensor = LIGHT_WHITE;
         }
         P = ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor);
+        //I制御
+        I += P + sensor_dt;
         //D制御
         D = (sensor_dt);
         //曲がり角度の決定
-        curb = Kp * P - Kd * D;
+        curb = Kp * P + Ki * I - Kd * D;
         if(course_type == 1) {
             turn = -curb;
         } else {
@@ -438,12 +442,12 @@ void main_task(intptr_t unused)
         }
 
         if(blue_count == 3){
-            LOG_D_DEBUG("直進");
+            LOG_D_DEBUG("右回り中");
             turn *= -1;
         }
 
         if(blue_count == 4 && count < wait_flame){
-            LOG_D_DEBUG("直進");
+            LOG_D_DEBUG("難関");
             turn *= 1;
             count++;
         }
@@ -459,33 +463,13 @@ void main_task(intptr_t unused)
             turn
         );
 
-#if 0
+#if 1
         /* 左右モータでロボットのステアリング操作を行う */
-        if(turn >= 0){
-            ev3_motor_set_power(
-                left_motor,
-                (int)(forward + turn / 4)
-            );
-            ev3_motor_set_power(
-                right_motor,
-                (int)(forward - turn * 2 / 3)
-            );
-        }else{
-            ev3_motor_set_power(
-                left_motor,
-                (int)(forward + turn * 2 / 3)
-            );
-            ev3_motor_set_power(
-                right_motor,
-                (int)(forward - turn / 4)
-            );
-        }
         
-        LOG_D_DEBUG("forward = %d",forward);
         LOG_D_DEBUG("turn = %d",turn);
+        LOG_D_DEBUG("reflect = %f",sensor_reflect);
         LOG_D_DEBUG("Kp = %f",Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor));
         LOG_D_DEBUG("Kd = %f",- Kd * (sensor_dt));
-        LOG_D_DEBUG("test");
 #endif
 
         tslp_tsk(1 * 1000U); /* 4msec周期起動 */
