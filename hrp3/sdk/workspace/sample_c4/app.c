@@ -8,51 +8,17 @@
  ******************************************************************************
  **/
 
+#include <stdbool.h>
+#include <string.h>
+#include <math.h>
+
 #include "ev3api.h"
 #include "app.h"
 #include "etroboc_ext.h"
 #include "common.h"
-#include <stdbool.h>
-#include <math.h>
-
-/*マトリクス上動作命令
-move_forward     :マトリクスのノードをトレースする
-turn_right       :90°右旋回する
-turn_left        :90°左旋回する
-push_blue_block  :青ブロックを押し出す
-get_red_block    :赤ブロックを保持する
-
-*/
-enum matrix_move_order{
-    move_forward=1,
-    turn_right=2,
-    turn_left=3,
-    push_blue_block=4,
-    get_red_block=5
-};
-/*
-マトリクス移動命令
-パターン4赤ブロック緑上の時
-*/
-int matrix_order[]={move_forward,
-                    move_forward,
-                    push_blue_block,
-                    turn_right,
-                    move_forward,
-                    turn_right,
-                    move_forward,
-                    turn_left,
-                    move_forward,
-                    push_blue_block,
-                    turn_left,
-                    move_forward,
-                    turn_right,
-                    move_forward,
-                    turn_left,
-                    move_forward,
-                    get_red_block
-                    };
-int matrix_order_size= sizeof(matrix_order)/sizeof(matrix_order[0]);
+#include "matrix.h"
+#include "extern.h"
+#include "color.h"
 
 #if defined(BUILD_MODULE)
     #include "module_cfg.h"
@@ -97,6 +63,10 @@ int matrix_order_size= sizeof(matrix_order)/sizeof(matrix_order[0]);
     #define _EDGE 1
 #endif
 
+#define REFLECT_LOG_SIZE 255
+
+extern LIST_ORDER_t list_order;
+
 /**
  * センサー、モーターの接続を定義します
  */
@@ -108,10 +78,8 @@ static const sensor_port_t
 
 static const motor_port_t
     left_motor      = EV3_PORT_C,
-    right_motor     = EV3_PORT_B;
+    right_motor     = EV3_PORT_B,
     center_motor    = EV3_PORT_D;
-    
-int ret_color_code(void);
 
 static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスタート */
 int flag_turn;
@@ -119,26 +87,10 @@ int flag_turn;
 int color_reflect;
 
 //course種類 1-左コース 2-右コース
-int course_type=2;
-
-
-#define REFLECT_LOG_SIZE 255
-
-
+int course_type=1;
 
 //serach_mode =0 :通常走行モード
-//
 int serach_mode=0;
-
-//反射データを記録するための配列
-uint8_t reflect_log[REFLECT_LOG_SIZE];
-//記録位置のポインタ
-int reflect_ptr=0;
-
-/* 下記のマクロは個体/環境に合わせて変更する必要があります */
-/* sample_c1マクロ */
-static int  LIGHT_WHITE  = 36;         /* 白色の光センサ値 */
-static int  LIGHT_BLACK  = 2;          /* 黒色の光センサ値 */
 
 /* sample_c2マクロ */
 #define SONAR_ALERT_DISTANCE 30 /* 超音波センサによる障害物検知距離[cm] */
@@ -152,46 +104,6 @@ static int  LIGHT_BLACK  = 2;          /* 黒色の光センサ値 */
 #define CALIB_FONT_WIDTH (6/*TODO: magic number*/)
 #define CALIB_FONT_HEIGHT (8/*TODO: magic number*/)
 
-/* 色彩センサ　閾値 */
-/* 青 */
-#define THRE_B_OF_BLUE 100
-#define THRE_G_OF_BLUE 60
-#define THRE_R_OF_BLUE 15
-
-/* 赤 */
-#define THRE_B_OF_RED 75
-#define THRE_G_OF_RED 75
-#define THRE_R_OF_RED 90
-
-/* 緑 */
-#define THRE_B_OF_GREEN 30
-#define THRE_G_OF_GREEN 90
-#define THRE_R_OF_GREEN 60
-
-/* 黄 */
-#define THRE_B_OF_YELLOW 150
-#define THRE_G_OF_YELLOW 150
-#define THRE_R_OF_YELLOW 60
-
-/* 黒 */
-#define THRE_B_OF_BLACK 25
-#define THRE_G_OF_BLACK 25
-#define THRE_R_OF_BLACK 25
-
-/* 白 */
-#define THRE_B_OF_WHITE 100
-#define THRE_G_OF_WHITE 100
-#define THRE_R_OF_WHITE 100
-
-/* カラーコード定義 */
-#define COLOR_CODE_RED    1
-#define COLOR_CODE_BLUE   2
-#define COLOR_CODE_GREEN  3
-#define COLOR_CODE_YELLOW 4
-#define COLOR_CODE_BLACK  5
-#define COLOR_CODE_WHITE  6
-#define COLOR_CODE_UNKNOWN  -1
-
 /* 関数プロトタイプ宣言 */
 static int sonar_alert(void);
 static void _syslog(int level, char* text);
@@ -199,21 +111,16 @@ static void _log(char* text);
 //static void tail_control(signed int angle);
 //static void backlash_cancel(signed char lpwm, signed char rpwm, int32_t *lenc, int32_t *renc);
 
-
-
 /* メインタスク */
 void main_task(intptr_t unused)
 {
     signed char forward;      /* 前後進命令 */
     signed char turn;         /* 旋回命令 */
-    int tmp_r, tmp_g,tmp_b;
     int read_color;
     int detected_flag = 0;    /* 線検知フラグ */
 
-    //配列初期化
-    for(int i=0;i<REFLECT_LOG_SIZE;i++){
-        reflect_log[i]=0;
-    }
+    int order_pattern = 0;
+    int order_red_pos = 0;
 
     /* LCD画面表示 */
     ev3_lcd_fill_rect(0, 0, EV3_LCD_WIDTH, EV3_LCD_HEIGHT, EV3_LCD_WHITE);
@@ -235,6 +142,9 @@ void main_task(intptr_t unused)
 
     //テールモーター固定
     ev3_motor_stop(center_motor,true);
+    
+    //マトリクス攻略命令リスト初期化
+    init_matrix_order();
 
     if (_bt_enabled)
     {
@@ -254,10 +164,9 @@ void main_task(intptr_t unused)
 
     if (_bt_enabled)
     {
-        fprintf(bt, "Bluetooth Remote Start: Ready.\n", EV3_SERIAL_BT);
-        fprintf(bt, "send '1' to start\n", EV3_SERIAL_BT);
+        fprintf(bt, "Bluetooth Remote Start: Ready.\n");
+        fprintf(bt, "send '1' to start\n");
     }
-    
 
     /* スタート待機 */
     while(1)
@@ -307,6 +216,59 @@ void main_task(intptr_t unused)
     ev3_led_set_color(LED_GREEN); /* スタート通知 */
     tslp_tsk(1000 * 1000U); /* 10msecウェイト */
 
+    //コースパターンを設定する
+    while (1) {
+        if (ev3_button_is_pressed(UP_BUTTON)) {
+            //パターン1
+            order_pattern = 0;
+            break;
+        } else if (ev3_button_is_pressed(DOWN_BUTTON)) {
+            //パターン2
+            order_pattern = 1;
+            break;
+        } else if (ev3_button_is_pressed(LEFT_BUTTON)) {
+            //パターン3
+            order_pattern = 2;
+            break;
+        } else if (ev3_button_is_pressed(RIGHT_BUTTON)) {
+            //パターン4
+            order_pattern = 3;
+            break;
+        } else if (ev3_button_is_pressed(ENTER_BUTTON)) {
+            //パターン5
+            order_pattern = 4;
+            break;
+        }
+    }
+
+    LOG_D_DEBUG("selected pattern %d\n", order_pattern + 1);
+
+    //赤ブロックの位置を設定する
+    //ダミーデータを設定されても確認しないので注意
+    while(1) {
+        if (ev3_button_is_pressed(UP_BUTTON)) {
+            //パターン1
+            order_red_pos = MATRIX_COLOR_RED;
+            break;
+        } else if (ev3_button_is_pressed(DOWN_BUTTON)) {
+            //パターン2
+            order_red_pos = MATRIX_COLOR_BLUE;
+            break;
+        } else if (ev3_button_is_pressed(LEFT_BUTTON)) {
+            //パターン3
+            order_red_pos = MATRIX_COLOR_YELLOW;
+            break;
+        } else if (ev3_button_is_pressed(RIGHT_BUTTON)) {
+            //パターン4
+            order_red_pos = MATRIX_COLOR_GREEN;
+            break;
+        }
+    }
+
+    char debug_color_msg[MATRIX_COLOR_MAX][10] = {
+        "赤", "青", "黄", "緑"
+    };
+    LOG_D_DEBUG("selected red block %s\n", debug_color_msg[order_red_pos]);
 
     /* ライントレース */
 #if 0
@@ -389,7 +351,6 @@ void main_task(intptr_t unused)
         if (isfound_red() == COLOR_CODE_RED){
             //赤色を検出したのでライントレースを終了する
             LOG_D_DEBUG("red discoverd.\n");
-
             break;
         }
 
@@ -506,13 +467,11 @@ void main_task(intptr_t unused)
     //誤作動を防ぐため、一定距離進
     ev3_motor_rotate(right_motor, 100, 30, false);
     ev3_motor_rotate(left_motor , 100, 30, true);
-    LOG_D_DEBUG("kura1\n");
     tslp_tsk(100 * 1000U); /* 1000msec 停止*/
 
     ev3_motor_set_power(left_motor, 10);
     ev3_motor_set_power(right_motor, 10);
 
-    LOG_D_DEBUG("kura2\n");     
     while (1) {
         read_color = ret_color_code();
         if (read_color == COLOR_CODE_BLACK) {
@@ -553,7 +512,7 @@ void main_task(intptr_t unused)
     //マトリクス攻略
     while(0)
     {
-        matrix_move_sequence(matrix_order, matrix_order_size);
+        matrix_move_sequence(list_order.left_matrix_order[0][MATRIX_COLOR_RED]);
         tslp_tsk(2 * 1000000U); /* 0.4msec周期起動 */
 
     }
@@ -569,17 +528,18 @@ void main_task(intptr_t unused)
 
     ext_tsk();
 }
+
 //*****************************************************************************
 // 関数名 : matrix_move_sequence
 // 引数 :   マトリクス行動ルートを格納した配列, 配列サイズ
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
-void matrix_move_sequence(int *order, int size){
+void matrix_move_sequence(MATRIX_ORDER_t order) {
+    int i = 0;
     
-    
-    for(int i=0; size >i; i++){
-        switch (order[i]){
+    for(i = 0; i < ORDER_NUM_MAX; i++){
+        switch (order.move_on_matrix_order[i]){
         case move_forward:
             LOG_D_DEBUG("matrix_move_sequence %d- move_forward\n",i);
             trace_node();
@@ -606,15 +566,15 @@ void matrix_move_sequence(int *order, int size){
             break;
         }
     }
-
 }
+
 //*****************************************************************************
 // 関数名 : do_push_blue_block
 // 引数 :   
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
-void do_push_blue_block(){
+void do_push_blue_block(void) {
 
     int rotate_degree=180;
 
@@ -632,7 +592,7 @@ void do_push_blue_block(){
 
 }
 
-int isfound_red(){
+int isfound_red(void) {
     rgb_raw_t read_rgb;
     ev3_color_sensor_get_rgb_raw(color_sensor, &read_rgb);
 
@@ -649,7 +609,7 @@ int isfound_red(){
 // 返り値 : COLOR_CODEの整数
 // 概要 :　
 //*****************************************************************************
-int ret_color_code(){
+int ret_color_code(void) {
     
     int ret;
     rgb_raw_t read_rgb;
@@ -699,7 +659,7 @@ int ret_color_code(){
 // 概要   :　ライントレース最終部分の赤読み取り時に実行される
 //           
 //*****************************************************************************
-void move_to_matrix_start_pos(int course_flag){
+void move_to_matrix_start_pos(int course_flag) {
 
     if(course_type==1){
 
@@ -724,7 +684,7 @@ void move_to_matrix_start_pos(int course_flag){
 // 返り値 : なし
 // 概要 :　
 //*****************************************************************************
-void motor_set_two_motor(int LeftMotorPower, int RightMotorPower){
+void motor_set_two_motor(int LeftMotorPower, int RightMotorPower) {
 
     ev3_motor_set_power(EV3_PORT_C, LeftMotorPower);
     ev3_motor_set_power(EV3_PORT_B, RightMotorPower);
@@ -738,7 +698,7 @@ void motor_set_two_motor(int LeftMotorPower, int RightMotorPower){
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
-void turn_90_degree(int flag_turn){
+void turn_90_degree(int flag_turn) {
 
     //車体　90度分旋回時　回転角度
     const int rotate_degree=125;
@@ -763,7 +723,7 @@ void turn_90_degree(int flag_turn){
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
-void turn_70_degree(int flag_turn){
+void turn_70_degree(int flag_turn) {
 
     //車体　70度分旋回時　回転角度
     const int rotate_degree=87;
@@ -787,7 +747,7 @@ void turn_70_degree(int flag_turn){
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
-void trace_node(){
+void trace_node(void) {
 
     int read_color;
 
@@ -848,7 +808,11 @@ void trace_node(){
 
 }
 
-
+void init_matrix_order(void) {
+    memset(&list_order, 0x00, sizeof(LIST_ORDER_t));
+    memcpy(&list_order.left_matrix_order, &left_list_order, sizeof(MATRIX_ORDER_t));
+    memcpy(&list_order.right_matrix_order, &right_list_order, sizeof(MATRIX_ORDER_t));
+}
 
 //*****************************************************************************
 // 関数名 : motor_stop
@@ -856,10 +820,9 @@ void trace_node(){
 // 返り値 : なし
 // 概要 :　車体を停止する
 //*****************************************************************************
-void motor_stop(){
+void motor_stop() {
     ev3_motor_stop(EV3_PORT_B,true);
     ev3_motor_stop(EV3_PORT_C,true);
-
 }
 
 
@@ -938,7 +901,7 @@ void bt_task(intptr_t unused)
 //        SYSLOGレベルはRFC3164のレベル名をそのまま（ERRだけはERROR）
 //        `LOG_WARNING`の様に定数で指定できます。
 //*****************************************************************************
-static void _syslog(int level, char* text){
+static void _syslog(int level, char* text) {
     static int _log_line = 0;
     if (_SIM)
     {
@@ -956,6 +919,6 @@ static void _syslog(int level, char* text){
 // 返り値 : なし
 // 概要 : SYSLOGレベルNOTICEのログメッセージtextを出力します。
 //*****************************************************************************
-static void _log(char *text){
+static void _log(char *text) {
     _syslog(LOG_NOTICE, text);
 }
