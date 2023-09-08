@@ -332,9 +332,11 @@ void main_task(intptr_t unused)
 #endif
 
     /* コンフィグ 初期設定 */
-   float Kp = 2.80;
-   float Kd = 0.3;
+   float Kp = 2.85;
+   float Ki = 0;
+   float Kd = 1.5;
    float P;
+   float I;
    float D;
    rgb_raw_t main_rgb;
    rgb_raw_t dbg_rgb;
@@ -348,18 +350,22 @@ void main_task(intptr_t unused)
    int blue_count = 0;
    int is_blue = 0;
    int wait_flame = 120;
+   int interval = -1;
 
    int count = 0;
     while(1)
     {
+        if (ev3_button_is_pressed(BACK_BUTTON)) break;
+
         if (isfound_red(&dbg_rgb) == COLOR_CODE_RED){
             //赤色を検出したのでライントレースを終了する
             LOG_D_DEBUG("red discoverd.\n");
             LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+
             break;
         }
 
-        forward = 20; /* 前進命令 */
+        forward = 30; /* 前進命令 */
         ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
 
         sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
@@ -372,20 +378,22 @@ void main_task(intptr_t unused)
 
         sensor = ev3_color_sensor_get_reflect(color_sensor);
 
-        //青かどうかの判定
-        if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > THRE_B_OF_BLUE * 3/4 && is_blue == 0){
-            is_blue = 1;
-            LOG_D_DEBUG("isBlue");
-        }
-        
-        if(!((4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > THRE_B_OF_BLUE * 3/4 && is_blue)
-        || (main_rgb.r > 158
-        || main_rgb.g > 229
-        || main_rgb.b > 353))
-        && is_blue == 1){
-            is_blue = 0;
-            blue_count++;
-            LOG_D_DEBUG("isNOTBlue");
+        if (interval == 0) {
+            //青かどうかの判定
+            if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > THRE_B_OF_BLUE * 3/4 && is_blue == 0){
+                is_blue = 1;
+                count++;
+                blue_count++;
+                interval = 1;
+                LOG_D_DEBUG("isBlue, count: %d, blue_count; %d\n", count, blue_count);
+            }
+        } else {
+            if (interval++ >= 100) {
+                //5sec 青を検出しない
+                is_blue = 0;
+                interval = 0;
+            }
+            //LOG_D_DEBUG("interval: %d\n", interval);
         }
 
         //P制御
@@ -393,23 +401,25 @@ void main_task(intptr_t unused)
             sensor = LIGHT_WHITE;
         }
         P = ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor);
+        //I制御
+        I += P + sensor_dt;
         //D制御
         D = (sensor_dt);
         //曲がり角度の決定
-        curb = Kp * P - Kd * D;
-        if(course_type == COURSE_RIGHT) {
+        curb = Kp * P + Ki * I - Kd * D;
+        if(course_type == 1) {
             turn = -curb;
         } else {
             turn = curb;
         }
 
         if(blue_count == 3){
-            LOG_D_DEBUG("直進");
+            LOG_D_DEBUG("右回り中");
             turn *= -1;
         }
 
         if(blue_count == 4 && count < wait_flame){
-            LOG_D_DEBUG("直進");
+            LOG_D_DEBUG("難関");
             turn *= 1;
             count++;
         }
@@ -425,36 +435,16 @@ void main_task(intptr_t unused)
             turn
         );
 
-#if 0
+#if 1
         /* 左右モータでロボットのステアリング操作を行う */
-        if(turn >= 0){
-            ev3_motor_set_power(
-                left_motor,
-                (int)(forward + turn / 4)
-            );
-            ev3_motor_set_power(
-                right_motor,
-                (int)(forward - turn * 2 / 3)
-            );
-        }else{
-            ev3_motor_set_power(
-                left_motor,
-                (int)(forward + turn * 2 / 3)
-            );
-            ev3_motor_set_power(
-                right_motor,
-                (int)(forward - turn / 4)
-            );
-        }
         
-        LOG_D_DEBUG("forward = %d",forward);
-        LOG_D_DEBUG("turn = %d",turn);
-        LOG_D_DEBUG("Kp = %f",Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor));
-        LOG_D_DEBUG("Kd = %f",- Kd * (sensor_dt));
-        LOG_D_DEBUG("test");
+        //LOG_D_DEBUG("turn = %d",turn);
+        //LOG_D_DEBUG("reflect = %f",sensor_reflect);
+        //LOG_D_DEBUG("Kp = %f",Kp * ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor));
+        //LOG_D_DEBUG("Kd = %f",- Kd * (sensor_dt));
 #endif
 
-        tslp_tsk(1 * 1000U); /* 1msec周期起動 */
+        tslp_tsk(1 * 1000U); /* 4msec周期起動 */
     }
 
     //ライントレース完了
