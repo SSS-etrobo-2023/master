@@ -332,27 +332,33 @@ void main_task(intptr_t unused)
 #endif
 
     /* コンフィグ 初期設定 */
-   float Kp = 2.85;
-   float Ki = 0;
-   float Kd = 1.5;
-   float P;
-   float I;
-   float D;
-   rgb_raw_t main_rgb;
-   rgb_raw_t dbg_rgb;
-   float sensor = 0;
-   float sensor_dt = 0;
-   float curb = 0.0;
-   float sensor_diff = (LIGHT_WHITE + LIGHT_BLACK)/2;
-   float sensor_reflect = 0;
+    float Kp = 1.0;
+    float Ki = 0.2;
+    float Kd = 0.005;
+    float P;
+    float I;
+    float D;
+    rgb_raw_t main_rgb;
+    rgb_raw_t dbg_rgb;
+    float sensor = 0;
+    float sensor_dt = 0;
+    float sensor_dt_pre = 0;
+    float curb = 0.0;
+    float sensor_diff = (LIGHT_WHITE + LIGHT_BLACK)/2;
+    float sensor_reflect = 0;
    
-   float weight;
-   int blue_count = 0;
-   int is_blue = 0;
-   int wait_flame = 120;
-   int interval = -1;
+    float T = 0.002;
+    float e_pre = 0;
+    float ie = 0;
+    float de = 0;
+    int count = 0;
 
-   int count = 0;
+    float weight;
+    int blue_count = 0;
+    int is_blue = 0;
+    int wait_flame = 120;
+    int interval = -1;
+
     while(1)
     {
         if (ev3_button_is_pressed(BACK_BUTTON)) break;
@@ -373,8 +379,8 @@ void main_task(intptr_t unused)
             sensor_reflect = LIGHT_WHITE;
         }
 
-        sensor_dt = sensor_diff - sensor_reflect;
-        sensor_diff = sensor_reflect;
+        sensor_dt_pre = sensor_dt;
+        sensor_dt = (sensor_diff - sensor_reflect);
 
         sensor = ev3_color_sensor_get_reflect(color_sensor);
 
@@ -401,12 +407,24 @@ void main_task(intptr_t unused)
             sensor = LIGHT_WHITE;
         }
         P = ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor);
+
         //I制御
-        I += P + sensor_dt;
+        ie = ie + (sensor_dt + sensor_dt_pre)*T/2;
+
         //D制御
-        D = (sensor_dt);
+        de = (sensor_dt - sensor_dt_pre)/T;
+
         //曲がり角度の決定
-        curb = Kp * P + Ki * I - Kd * D;
+            curb = Kp * sensor_dt + Ki*ie + Kd*de;
+
+        if (curb > 100){
+            curb = 80;
+        }
+
+        if(curb < -100){
+            curb = -80;
+        }
+
         if(course_type == 1) {
             turn = -curb;
         } else {
@@ -444,7 +462,7 @@ void main_task(intptr_t unused)
         //LOG_D_DEBUG("Kd = %f",- Kd * (sensor_dt));
 #endif
 
-        tslp_tsk(1 * 1000U); /* 4msec周期起動 */
+        tslp_tsk(2 * 1000U); /* 2msec周期起動 */
     }
 
     //ライントレース完了
