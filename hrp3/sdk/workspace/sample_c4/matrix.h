@@ -514,8 +514,8 @@ const MATRIX_ORDER_t right_list_order[PATTERN_MAX][MATRIX_COLOR_MAX] = {
 
         /* 赤ブロックが黄の位置 */
         {
-            { /* 命令を羅列する */},
-            { /* 命令を羅列する */}
+            { dummy },
+            { dummy }
         },
 
         /* 赤ブロックが緑の位置 */

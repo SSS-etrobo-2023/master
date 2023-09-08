@@ -86,8 +86,8 @@ int flag_turn;
 
 int color_reflect;
 
-//course種類 1-左コース 2-右コース
-int course_type=1;
+//course種類 1-右コース 2-左コース
+int course_type = COURSE_RIGHT;
 
 //serach_mode =0 :通常走行モード
 int serach_mode=0;
@@ -165,7 +165,8 @@ void main_task(intptr_t unused)
     if (_bt_enabled)
     {
         fprintf(bt, "Bluetooth Remote Start: Ready.\n");
-        fprintf(bt, "send '1' to start\n");
+        fprintf(bt, "1 : start\n");
+        fprintf(bt, "2 : get light power\n");
     }
 
     /* スタート待機 */
@@ -192,7 +193,6 @@ void main_task(intptr_t unused)
         if (ev3_button_is_pressed(LEFT_BUTTON) ){
             LOG_D_DEBUG("LEFT  BUTTON is pushed\n");
         }
-
         if (ev3_button_is_pressed(RIGHT_BUTTON) ){
             LOG_D_DEBUG("RIGHT BUTTON is pushed\n");
         }
@@ -217,6 +217,8 @@ void main_task(intptr_t unused)
     tslp_tsk(1000 * 1000U); /* 10msecウェイト */
 
     //コースパターンを設定する
+    LOG_D_DEBUG("select pattern.\n");
+
     while (1) {
         if (ev3_button_is_pressed(UP_BUTTON)) {
             //パターン1
@@ -242,9 +244,12 @@ void main_task(intptr_t unused)
     }
 
     LOG_D_DEBUG("selected pattern %d\n", order_pattern + 1);
+    tslp_tsk(1000 * 1000U); /* 1000msecウェイト */
 
     //赤ブロックの位置を設定する
     //ダミーデータを設定されても確認しないので注意
+    LOG_D_DEBUG("select red block pos.\n");
+
     while(1) {
         if (ev3_button_is_pressed(UP_BUTTON)) {
             //パターン1
@@ -266,9 +271,9 @@ void main_task(intptr_t unused)
     }
 
     char debug_color_msg[MATRIX_COLOR_MAX][10] = {
-        "赤", "青", "黄", "緑"
+        "red", "blue", "yellow", "green"
     };
-    LOG_D_DEBUG("selected red block %s\n", debug_color_msg[order_red_pos]);
+    LOG_D_DEBUG("selected red block pos %s\n", debug_color_msg[order_red_pos]);
 
     /* ライントレース */
 #if 0
@@ -332,6 +337,7 @@ void main_task(intptr_t unused)
    float P;
    float D;
    rgb_raw_t main_rgb;
+   rgb_raw_t dbg_rgb;
    float sensor = 0;
    float sensor_dt = 0;
    float curb = 0.0;
@@ -346,15 +352,14 @@ void main_task(intptr_t unused)
    int count = 0;
     while(1)
     {
-        if (ev3_button_is_pressed(BACK_BUTTON)) break;
-
-        if (isfound_red() == COLOR_CODE_RED){
+        if (isfound_red(&dbg_rgb) == COLOR_CODE_RED){
             //赤色を検出したのでライントレースを終了する
             LOG_D_DEBUG("red discoverd.\n");
+            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
             break;
         }
 
-        forward = 30; /* 前進命令 */
+        forward = 20; /* 前進命令 */
         ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
 
         sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
@@ -392,7 +397,7 @@ void main_task(intptr_t unused)
         D = (sensor_dt);
         //曲がり角度の決定
         curb = Kp * P - Kd * D;
-        if(course_type == 1) {
+        if(course_type == COURSE_RIGHT) {
             turn = -curb;
         } else {
             turn = curb;
@@ -449,11 +454,10 @@ void main_task(intptr_t unused)
         LOG_D_DEBUG("test");
 #endif
 
-        tslp_tsk(1 * 1000U); /* 4msec周期起動 */
+        tslp_tsk(1 * 1000U); /* 1msec周期起動 */
     }
 
     //ライントレース完了
-
     LOG_D_DEBUG("linetrace completed.\n");
 
     ev3_motor_stop(left_motor, false);
@@ -461,29 +465,54 @@ void main_task(intptr_t unused)
     tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
     //マトリクスに向かって移動する
-    move_to_matrix_start_pos(course_type);
-    tslp_tsk(1000 * 1000U); /* 1000msec 停止*/
+    if (course_type == COURSE_RIGHT) {
+        turn_specified_degree(75, ROTATE_LEFT);
+    } else {
+        turn_specified_degree(75, ROTATE_RIGHT);
+    }
+    tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
     //誤作動を防ぐため、一定距離進
     ev3_motor_rotate(right_motor, 100, 30, false);
     ev3_motor_rotate(left_motor , 100, 30, true);
-    tslp_tsk(100 * 1000U); /* 1000msec 停止*/
+    tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
     ev3_motor_set_power(left_motor, 10);
     ev3_motor_set_power(right_motor, 10);
 
     while (1) {
-        read_color = ret_color_code();
+        read_color = ret_color_code(&dbg_rgb);
         if (read_color == COLOR_CODE_BLACK) {
-            LOG_D_DEBUG("arrived matrix1.\n");
+            LOG_D_DEBUG("arrived matrix. adjust position.\n");
+            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
             //到着した
             break;
+        } else if ((read_color == COLOR_CODE_BLUE) || (read_color == COLOR_CODE_RED)) {
+            //ブロックサークルに到着したケース
+            //黒線上に位置を修正する
+            LOG_D_DEBUG("arrived block circle. modify over black.\n");
+            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+
+            ev3_motor_rotate(right_motor, -200, 30, false);
+            ev3_motor_rotate(left_motor, -200, 30, true);
+            tslp_tsk(100 * 1000U);
+
+            if (course_type == COURSE_RIGHT) {
+                turn_specified_degree(45, ROTATE_LEFT);
+            } else {
+                turn_specified_degree(45, ROTATE_RIGHT);
+            }
+            tslp_tsk(100 * 1000U);
+
+            //もう一度黒線まで直進する
+            ev3_motor_set_power(left_motor, 10);
+            ev3_motor_set_power(right_motor, 10);
         }
 
         tslp_tsk(4 * 1000U); /* 4msec 停止*/
     }
 
-    tslp_tsk(100 * 1000U); /* 1000msec 停止*/
+    tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
     //角度をただす
     //車軸-センサー間分(5cm)前進
@@ -491,17 +520,18 @@ void main_task(intptr_t unused)
     ev3_motor_rotate(left_motor , 40, 30, true);
 
     while(1){
-        if (course_type == 1) {
+        if (course_type == COURSE_RIGHT) {
             ev3_motor_rotate(left_motor , 10, 20, false);
             ev3_motor_rotate(right_motor , -10, 20, true);
         } else {
-        ev3_motor_rotate(left_motor , -10, 20, false);
-        ev3_motor_rotate(right_motor , 10, 20, true);
+            ev3_motor_rotate(left_motor , -10, 20, false);
+            ev3_motor_rotate(right_motor , 10, 20, true);
         }
 
-        read_color = ret_color_code();
+        read_color = ret_color_code(&dbg_rgb);
         if (read_color == COLOR_CODE_BLACK) {
-            LOG_D_DEBUG("arrived matrix2.\n");
+            LOG_D_DEBUG("adjust position done. move to red block circle.\n");
+            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
             //到着した
             break;
         }
@@ -509,12 +539,71 @@ void main_task(intptr_t unused)
         tslp_tsk(4 * 1000U); /* 4msec 停止*/
     }
 
+    //赤のブロックサークルまで移動する
+    //右コースなら黒線の左、左コースなら黒線の右をトレースしながら進む
+    int line_color = COLOR_CODE_UNKNOWN;
+    forward = 15;
+
+    while (1) {
+        line_color = ret_color_code(&dbg_rgb);
+        if (line_color == COLOR_CODE_BLUE) {
+            //ブロックサークルを直進して進む
+            LOG_D_DEBUG("blue block circle found.\n")
+            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+            ev3_motor_rotate(right_motor, 200, 20, false);
+            ev3_motor_rotate(left_motor , 200, 20, true);
+        } else if (line_color == COLOR_CODE_RED) {
+            //移動完了、マトリクス攻略を行う
+            LOG_D_DEBUG("arrived red block circle.\n");
+            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+            break;
+        } else {
+            //念のため UNKOWN で更新する
+            line_color = COLOR_CODE_UNKNOWN;
+        }
+
+        sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
+        if(sensor_reflect > LIGHT_WHITE){
+            sensor_reflect = LIGHT_WHITE;
+        }
+
+        sensor_dt = sensor_diff - sensor_reflect;
+        sensor_diff = sensor_reflect;
+
+        sensor = ev3_color_sensor_get_reflect(color_sensor);
+
+        //P制御
+        if(sensor > LIGHT_WHITE){
+            sensor = LIGHT_WHITE;
+        }
+        P = ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor);
+        //D制御
+        D = (sensor_dt);
+        //曲がり角度の決定
+        curb = Kp * P - Kd * D;
+        if(course_type == COURSE_RIGHT) {
+            turn = -curb;
+        } else {
+            turn = curb;
+        }
+
+        ev3_motor_steer(
+            left_motor,
+            right_motor,
+            forward,
+            turn
+        );
+        
+        tslp_tsk(1 * 1000U); /* 1msec周期起動 */
+    }
+
+    LOG_D_DEBUG("Start 'block de treasure hunter.'\n");
+
     //マトリクス攻略
     while(0)
     {
-        matrix_move_sequence(list_order.left_matrix_order[0][MATRIX_COLOR_RED]);
+        matrix_move_sequence(list_order.left_matrix_order[order_pattern][order_red_pos]);
         tslp_tsk(2 * 1000000U); /* 0.4msec周期起動 */
-
     }
 
     if (_bt_enabled)
@@ -531,7 +620,7 @@ void main_task(intptr_t unused)
 
 //*****************************************************************************
 // 関数名 : matrix_move_sequence
-// 引数 :   マトリクス行動ルートを格納した配列, 配列サイズ
+// 引数 :   マトリクス行動ルートを格納した配列
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
@@ -592,9 +681,13 @@ void do_push_blue_block(void) {
 
 }
 
-int isfound_red(void) {
+int isfound_red(rgb_raw_t *dbg_rgb) {
     rgb_raw_t read_rgb;
     ev3_color_sensor_get_rgb_raw(color_sensor, &read_rgb);
+
+    if (NULL != dbg_rgb) {
+        memcpy(dbg_rgb, &read_rgb, sizeof(rgb_raw_t));
+    }
 
     if ((read_rgb.r >= THRE_R_OF_RED) && (read_rgb.r > 1.5 * read_rgb.b) && (read_rgb.r > 1.5 * read_rgb.g)) {
         return COLOR_CODE_RED;
@@ -605,11 +698,11 @@ int isfound_red(void) {
 
 //*****************************************************************************
 // 関数名 : ret_color_code
-// 引数 :   L
+// 引数 :   rgb_raw_t *ret_rgb - 取得した値を格納
 // 返り値 : COLOR_CODEの整数
 // 概要 :　
 //*****************************************************************************
-int ret_color_code(void) {
+int ret_color_code(rgb_raw_t *ret_rgb) {
     
     int ret;
     rgb_raw_t read_rgb;
@@ -646,36 +739,16 @@ int ret_color_code(void) {
         //不明の時
         ret= COLOR_CODE_UNKNOWN;
         //LOG_D_DEBUG("UNKNOWN r= %u g= %u b=%u \n",read_rgb.r, read_rgb.g, read_rgb.b);
-
     }
+
+    if (NULL != ret_rgb) {
+        memcpy(ret_rgb, &read_rgb, sizeof(rgb_raw_t));
+    }
+
     return ret;
 
 
 }
-//*****************************************************************************
-// 関数名 :move_to_matrix_start_pos
-// 引数   :   1-左コース 2-右コース
-// 返り値 : なし
-// 概要   :　ライントレース最終部分の赤読み取り時に実行される
-//           
-//*****************************************************************************
-void move_to_matrix_start_pos(int course_flag) {
-
-    if(course_type==1){
-
-        turn_70_degree(1);
-
-
-    }else if(course_type==2){
-
-        turn_70_degree(2);
-
-
-    }
-
-
-}
-
 
 //*****************************************************************************
 // 関数名 : motor_set_two_motor
@@ -717,30 +790,24 @@ void turn_90_degree(int flag_turn) {
     
 }
 
-//*****************************************************************************
-// 関数名 : turn_70_degree
-// 引数 :   1-右旋回　2-左旋回
-// 返り値 : 
-// 概要 :　
-//*****************************************************************************
-void turn_70_degree(int flag_turn) {
+//未検証
+void turn_specified_degree(int degree, int flag_turn) {
+    //回転度数を各モータの回転角度に修正するための定数
+    const double rate = 1.3;
+    const int forward = 20;
+    int rotate_degree = floor(degree * rate);
 
-    //車体　70度分旋回時　回転角度
-    const int rotate_degree=87;
-
-    if(flag_turn==1){
-        //右旋回
-        ev3_motor_rotate(right_motor, rotate_degree , 20, false);
-        ev3_motor_rotate(left_motor , -rotate_degree, 20, true);
-
-    }else if(flag_turn==2){
-        //左旋回
-        ev3_motor_rotate(left_motor , rotate_degree , 20, false);
-        ev3_motor_rotate(right_motor , -rotate_degree, 20, true);
-
+    if (ROTATE_RIGHT == flag_turn) {
+        ev3_motor_rotate(right_motor, -rotate_degree, forward, false);
+        ev3_motor_rotate(left_motor , rotate_degree, forward, true);
+    } else if (ROTATE_LEFT == flag_turn) {
+        ev3_motor_rotate(right_motor, rotate_degree, forward, false);
+        ev3_motor_rotate(left_motor , -rotate_degree, forward, true);
+    } else {
+        LOG_D_ERROR("Bad Parameter. flag_turn: %d\n", flag_turn);
     }
-    
 }
+
 //*****************************************************************************
 // 関数名 : trace_node
 // 引数 : 
@@ -789,7 +856,7 @@ void trace_node(void) {
 
             LOG_D_DEBUG("trace_node [black]\n");
         }
-        read_color=ret_color_code();
+        read_color=ret_color_code(NULL);
 
         //色(赤、青、黄、緑)検出時
         if(read_color==COLOR_CODE_BLUE    ||read_color==COLOR_CODE_YELLOW 
