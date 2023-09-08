@@ -87,7 +87,7 @@ int flag_turn;
 int color_reflect;
 
 //course種類 1-右コース 2-左コース
-int course_type = COURSE_RIGHT;
+int course_type = COURSE_LEFT;
 
 //serach_mode =0 :通常走行モード
 int serach_mode=0;
@@ -359,6 +359,8 @@ void main_task(intptr_t unused)
     int wait_flame = 120;
     int interval = -1;
 
+    int trace_pos = course_type;
+
     while(1)
     {
         if (ev3_button_is_pressed(BACK_BUTTON)) break;
@@ -368,7 +370,7 @@ void main_task(intptr_t unused)
             LOG_D_DEBUG("red discoverd.\n");
             LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
 
-            break;
+            // break;
         }
 
         forward = 30; /* 前進命令 */
@@ -386,7 +388,7 @@ void main_task(intptr_t unused)
 
         if (interval == 0) {
             //青かどうかの判定
-            if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > THRE_B_OF_BLUE * 3/4 && is_blue == 0){
+            if(1.5 * main_rgb.r < main_rgb.b && 1.5 * main_rgb.g < main_rgb.b && main_rgb.b > THRE_B_OF_BLUE * 3/4 && is_blue == 0){
                 is_blue = 1;
                 count++;
                 blue_count++;
@@ -425,20 +427,28 @@ void main_task(intptr_t unused)
             curb = -80;
         }
 
-        if(course_type == 1) {
+        if(trace_pos == COURSE_RIGHT) {
             turn = -curb;
         } else {
             turn = curb;
         }
 
         if(blue_count == 3){
-            LOG_D_DEBUG("右回り中");
-            turn *= -1;
+            //LOG_D_DEBUG("右回り中");
+            if (trace_pos == COURSE_RIGHT) {
+                trace_pos = COURSE_LEFT;
+            } else {
+                trace_pos = COURSE_RIGHT;
+            }
         }
 
         if(blue_count == 4 && count < wait_flame){
             LOG_D_DEBUG("難関");
-            turn *= 1;
+            if (trace_pos == COURSE_RIGHT) {
+                trace_pos = COURSE_LEFT;
+            } else {
+                trace_pos = COURSE_RIGHT;
+            }
             count++;
         }
 
@@ -446,12 +456,21 @@ void main_task(intptr_t unused)
             turn *= -1;
         }
 
-        ev3_motor_steer(
-            left_motor,
-            right_motor,
-            forward,
-            turn
-        );
+        if (trace_pos == COURSE_RIGHT) {
+            ev3_motor_steer(
+                right_motor,
+                left_motor,
+                forward,
+                turn
+            );
+        } else {
+            ev3_motor_steer(
+                left_motor,
+                right_motor,
+                forward,
+                turn
+            );
+        }
 
 #if 1
         /* 左右モータでロボットのステアリング操作を行う */
