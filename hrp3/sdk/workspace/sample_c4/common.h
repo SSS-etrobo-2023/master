@@ -7,11 +7,8 @@
 /* 1:ERROR, 2:DEBUG, 3:TEST */
 #define LOG_LEVEL 3
 
-#define COURSE_RIGHT 1
-#define COURSE_LEFT  2
-
-#define ROTATE_RIGHT 1
-#define ROTATE_LEFT  2
+#define RIGHT 1
+#define LEFT  2
 
 #ifndef MAKE_BT_DISABLE
 #define LOG_D_TEST(format, ...)\

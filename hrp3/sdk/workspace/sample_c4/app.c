@@ -66,6 +66,7 @@
 #define REFLECT_LOG_SIZE 255
 
 extern LIST_ORDER_t list_order;
+extern TARGET_REFLECT_t target_reflect_def[3];
 
 /**
  * センサー、モーターの接続を定義します
@@ -87,7 +88,7 @@ int flag_turn;
 int color_reflect;
 
 //course種類 1-右コース 2-左コース
-int course_type = COURSE_LEFT;
+int course_type = RIGHT;
 
 //serach_mode =0 :通常走行モード
 int serach_mode=0;
@@ -114,7 +115,7 @@ static void _log(char* text);
 /* メインタスク */
 void main_task(intptr_t unused)
 {
-    signed char forward;      /* 前後進命令 */
+    signed char forward = 40; /* 前後進命令 */
     signed char turn;         /* 旋回命令 */
     int read_color;
     int detected_flag = 0;    /* 線検知フラグ */
@@ -344,7 +345,6 @@ void main_task(intptr_t unused)
     float sensor_dt = 0;
     float sensor_dt_pre = 0;
     float curb = 0.0;
-    float sensor_diff = (LIGHT_WHITE + LIGHT_BLACK)/2;
     float sensor_reflect = 0;
    
     float T = 0.002;
@@ -359,12 +359,15 @@ void main_task(intptr_t unused)
     int wait_flame = 120;
     int interval = -1;
 
-    int trace_pos = course_type;
+ 
+    //最初のレイントレースでは、
+    //右コースはラインの左、左コースはラインの右を白寄りでトレース
+    TARGET_REFLECT_t target_reflect;
+    target_reflect = change_target_reflect(COLOR_CODE_WHITE);
+    int trace_pos = (course_type == RIGHT) ? LEFT : RIGHT;
 
     while(1)
     {
-        if (ev3_button_is_pressed(BACK_BUTTON)) break;
-
         if (isfound_red(&dbg_rgb) == COLOR_CODE_RED){
             //赤色を検出したのでライントレースを終了する
             LOG_D_DEBUG("red discoverd.\n");
@@ -373,7 +376,6 @@ void main_task(intptr_t unused)
             // break;
         }
 
-        forward = 30; /* 前進命令 */
         ev3_color_sensor_get_rgb_raw(color_sensor,&main_rgb);
 
         sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
@@ -382,7 +384,7 @@ void main_task(intptr_t unused)
         }
 
         sensor_dt_pre = sensor_dt;
-        sensor_dt = (sensor_diff - sensor_reflect);
+        sensor_dt = (target_reflect.reflect - sensor_reflect);
 
         sensor = ev3_color_sensor_get_reflect(color_sensor);
 
@@ -408,7 +410,7 @@ void main_task(intptr_t unused)
         if(sensor > LIGHT_WHITE){
             sensor = LIGHT_WHITE;
         }
-        P = ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor);
+        P = ((float)target_reflect.reflect/2 - sensor);
 
         //I制御
         ie = ie + (sensor_dt + sensor_dt_pre)*T/2;
@@ -417,7 +419,7 @@ void main_task(intptr_t unused)
         de = (sensor_dt - sensor_dt_pre)/T;
 
         //曲がり角度の決定
-            curb = Kp * sensor_dt + Ki*ie + Kd*de;
+        curb = Kp * sensor_dt + Ki*ie + Kd*de;
 
         if (curb > 100){
             curb = 80;
@@ -427,50 +429,41 @@ void main_task(intptr_t unused)
             curb = -80;
         }
 
-        if(trace_pos == COURSE_RIGHT) {
+        if(trace_pos == RIGHT) {
             turn = -curb;
         } else {
             turn = curb;
         }
 
+        if (blue_count == 1) {
+            forward = 30;
+            //反射基準値を切り替える -> 青を検出しやすくする
+            target_reflect = change_target_reflect(COLOR_CODE_BLUE);
+        }
+
         if(blue_count == 3){
+            //トレース方向を切り替える
+            trace_pos = changet_trace_pos(trace_pos);
             //LOG_D_DEBUG("右回り中");
-            if (trace_pos == COURSE_RIGHT) {
-                trace_pos = COURSE_LEFT;
-            } else {
-                trace_pos = COURSE_RIGHT;
-            }
         }
 
         if(blue_count == 4 && count < wait_flame){
             LOG_D_DEBUG("難関");
-            if (trace_pos == COURSE_RIGHT) {
-                trace_pos = COURSE_LEFT;
-            } else {
-                trace_pos = COURSE_RIGHT;
-            }
             count++;
         }
 
         if(blue_count >= 4 && count >= wait_flame){
-            turn *= -1;
+            //反射基準値を切り替える
+            target_reflect = change_target_reflect(COLOR_CODE_BLACK);
+            turn *= -1; //不要？
         }
 
-        if (trace_pos == COURSE_RIGHT) {
-            ev3_motor_steer(
-                right_motor,
-                left_motor,
-                forward,
-                turn
-            );
-        } else {
-            ev3_motor_steer(
-                left_motor,
-                right_motor,
-                forward,
-                turn
-            );
-        }
+        ev3_motor_steer(
+            left_motor,
+            right_motor,
+            forward,
+            turn
+        );
 
 #if 1
         /* 左右モータでロボットのステアリング操作を行う */
@@ -492,10 +485,10 @@ void main_task(intptr_t unused)
     tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
     //マトリクスに向かって移動する
-    if (course_type == COURSE_RIGHT) {
-        turn_specified_degree(75, ROTATE_LEFT);
+    if (course_type == RIGHT) {
+        turn_specified_degree(75, LEFT);
     } else {
-        turn_specified_degree(75, ROTATE_RIGHT);
+        turn_specified_degree(75, RIGHT);
     }
     tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
@@ -524,10 +517,10 @@ void main_task(intptr_t unused)
             ev3_motor_rotate(left_motor, -200, 30, true);
             tslp_tsk(100 * 1000U);
 
-            if (course_type == COURSE_RIGHT) {
-                turn_specified_degree(45, ROTATE_LEFT);
+            if (course_type == RIGHT) {
+                turn_specified_degree(45, LEFT);
             } else {
-                turn_specified_degree(45, ROTATE_RIGHT);
+                turn_specified_degree(45, RIGHT);
             }
             tslp_tsk(100 * 1000U);
 
@@ -547,7 +540,7 @@ void main_task(intptr_t unused)
     ev3_motor_rotate(left_motor , 40, 30, true);
 
     while(1){
-        if (course_type == COURSE_RIGHT) {
+        if (course_type == RIGHT) {
             ev3_motor_rotate(left_motor , 10, 20, false);
             ev3_motor_rotate(right_motor , -10, 20, true);
         } else {
@@ -594,8 +587,8 @@ void main_task(intptr_t unused)
             sensor_reflect = LIGHT_WHITE;
         }
 
-        sensor_dt = sensor_diff - sensor_reflect;
-        sensor_diff = sensor_reflect;
+        sensor_dt = target_reflect.reflect - sensor_reflect;
+        target_reflect.reflect = sensor_reflect;
 
         sensor = ev3_color_sensor_get_reflect(color_sensor);
 
@@ -608,7 +601,7 @@ void main_task(intptr_t unused)
         D = (sensor_dt);
         //曲がり角度の決定
         curb = Kp * P - Kd * D;
-        if(course_type == COURSE_RIGHT) {
+        if(course_type == RIGHT) {
             turn = -curb;
         } else {
             turn = curb;
@@ -706,6 +699,23 @@ void do_push_blue_block(void) {
 
     ev3_motor_rotate(center_motor, -50 , 50, true);
 
+}
+
+TARGET_REFLECT_t change_target_reflect(int color_code) {
+    int i = 0;
+
+    for (i = 0; sizeof(target_reflect_def) / sizeof(target_reflect_def[0]); i++) {
+        if (target_reflect_def[i].color == color_code) {
+            return target_reflect_def[i];
+        }
+    }
+
+    //デフォルトでは黒に近いラインをトレースするようにする
+    return target_reflect_def[0];
+}
+
+int changet_trace_pos(int now_trase_pos) {
+    return now_trase_pos == RIGHT ? LEFT : RIGHT;
 }
 
 int isfound_red(rgb_raw_t *dbg_rgb) {
@@ -824,10 +834,10 @@ void turn_specified_degree(int degree, int flag_turn) {
     const int forward = 20;
     int rotate_degree = floor(degree * rate);
 
-    if (ROTATE_RIGHT == flag_turn) {
+    if (RIGHT == flag_turn) {
         ev3_motor_rotate(right_motor, -rotate_degree, forward, false);
         ev3_motor_rotate(left_motor , rotate_degree, forward, true);
-    } else if (ROTATE_LEFT == flag_turn) {
+    } else if (LEFT == flag_turn) {
         ev3_motor_rotate(right_motor, rotate_degree, forward, false);
         ev3_motor_rotate(left_motor , -rotate_degree, forward, true);
     } else {
