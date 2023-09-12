@@ -356,7 +356,7 @@ void main_task(intptr_t unused)
             count++;
         }
 
-        if(blue_count >= 4 && count >= wait_flame){
+        if(blue_count >= 4 && count >= wait_flame && chg_flag == 1){
             //反射基準値を切り替える
             target_reflect = change_target_reflect(COLOR_CODE_BLACK);
             chg_flag = 0;
