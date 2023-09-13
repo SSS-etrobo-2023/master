@@ -116,7 +116,7 @@ static void _log(char* text);
 void main_task(intptr_t unused)
 {
     signed char forward = 40; /* 前後進命令 */
-    signed char turn;         /* 旋回命令 */
+    float turn;         /* 旋回命令 */
     int read_color;
 
     int order_pattern = 0;
@@ -290,7 +290,7 @@ void main_task(intptr_t unused)
     int count = 0;
     int blue_count = 0;
     int is_blue = 0;
-    int wait_flame = 120;
+    int wait_flame = 40;
     int interval = -1;
     int chg_flag = 0;
  
@@ -313,28 +313,24 @@ void main_task(intptr_t unused)
         ev3_color_sensor_get_rgb_raw(color_sensor, &main_rgb);
         //sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
 
-        if (interval == 0) {
-            //青かどうかの判定
-            if((1.5 * main_rgb.r < main_rgb.b ) && (1.5 * main_rgb.g < main_rgb.b) &&
-               (main_rgb.b > THRE_B_OF_BLUE * 3/4) && (is_blue == 0)) {
-                is_blue = 1;
-                chg_flag = 1;
-                blue_count++;
-                interval = 1;
-                LOG_D_DEBUG("isBlue, count: %d, blue_count; %d\n", count, blue_count);
-            }
-        } else {
-            if (interval++ >= 100) {
-                //5sec 青を検出しない
-                is_blue = 0;
-                chg_flag = 0;
-                interval = 0;
-            }
-            //LOG_D_DEBUG("interval: %d\n", interval);
+        //青かどうかの判定
+        if((1.8 * main_rgb.r < main_rgb.b ) && (1.8 * main_rgb.g < main_rgb.b) && (is_blue == 0)
+        && (main_rgb.r > THRE_R_OF_WHITE * 0.2 && main_rgb.g > THRE_G_OF_WHITE * 0.2 && main_rgb.b > THRE_B_OF_WHITE * 0.2)) {
+            is_blue = 1;
+            chg_flag = 1;
+            LOG_D_DEBUG("isBlue, count: %d, blue_count; %d\n", count, blue_count);
+        } else if(!((1.8 * main_rgb.r < main_rgb.b ) && (1.8 * main_rgb.g < main_rgb.b))
+         && (main_rgb.r < THRE_R_OF_WHITE * 0.8 && main_rgb.g < THRE_G_OF_WHITE * 0.8 && main_rgb.b < THRE_B_OF_WHITE * 0.8)
+         && (is_blue == 1)) {
+            //5sec 青を検出しない
+            is_blue = 0;
+            blue_count++;
+            LOG_D_DEBUG("isNotBlue, count: %d, blue_count; %d\n", count, blue_count);
         }
+        //LOG_D_DEBUG("interval: %d\n", interval);
 
         if (blue_count == 1 && chg_flag == 1) {
-            forward = 30;
+            forward = 35;
             //反射基準値を切り替える -> 青を検出しやすくする
             target_reflect = change_target_reflect(COLOR_CODE_BLUE);
             chg_flag = 0;
@@ -342,24 +338,31 @@ void main_task(intptr_t unused)
 
         if(blue_count == 3 && chg_flag == 1){
             sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
+            LOG_D_DEBUG("sensor_reflect: %d\ntarget_reflect.color: %d\ntarget_reflect.reflect: %d\n",
+                        sensor_reflect, target_reflect.color, target_reflect.reflect);
             //取得値が基準値よりも小さい = 黒(or青)にいるケースで切り替える想定
-            if (sensor_reflect < target_reflect.reflect) {
+            if (true) {
                 //トレース方向を切り替える
                 trace_pos = changet_trace_pos(trace_pos);
+                blue_count++;
                 chg_flag = 0;
             }
             //LOG_D_DEBUG("右回り中");
         }
 
-        if(blue_count == 4 && count < wait_flame){
-            LOG_D_DEBUG("難関");
+        if(blue_count == 5 && count < wait_flame){
+            if(chg_flag == 1){
+                trace_pos = changet_trace_pos(trace_pos);
+                target_reflect = change_target_reflect(COLOR_CODE_BLACK);
+                chg_flag = 0;
+            }
             count++;
         }
 
-        if(blue_count >= 4 && count >= wait_flame && chg_flag == 1){
+        if(blue_count >= 5 && count == wait_flame){
             //反射基準値を切り替える
-            target_reflect = change_target_reflect(COLOR_CODE_BLACK);
-            chg_flag = 0;
+            trace_pos = changet_trace_pos(trace_pos);
+            count++;
         }
 
         turn = culculate_turn(target_reflect.reflect, trace_pos);
@@ -529,7 +532,7 @@ float culculate_turn(unsigned int target_reflect, int trace_pos) {
     float curb = 0;
 
     float sensor_reflect = 0;
-    float sensor_dt = 0;
+    static float sensor_dt = 0;
     static float sensor_dt_pre = 0;
 
     float ie = 0;
@@ -537,9 +540,9 @@ float culculate_turn(unsigned int target_reflect, int trace_pos) {
 
     //制御定数
     const float T  = 0.002;
-    const float Kp = 1.0;
-    const float Ki = 0.2;
-    const float Kd = 0.005;
+    const float Kp = 2.0;
+    const float Ki = 1.0;
+    const float Kd = 0.015;
 
     sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
     if(sensor_reflect > LIGHT_WHITE){
@@ -557,7 +560,7 @@ float culculate_turn(unsigned int target_reflect, int trace_pos) {
     de = (sensor_dt - sensor_dt_pre)/T;
 
     //曲がり角度の決定
-    curb = Kp * sensor_dt + Ki*ie + Kd*de;
+    curb = Kp * sensor_dt + Ki * ie + Kd * de;
 
     if (curb > 100){
         curb = 80;
@@ -567,12 +570,11 @@ float culculate_turn(unsigned int target_reflect, int trace_pos) {
         curb = -80;
     }
 
-    if(trace_pos == RIGHT) {
+    if(trace_pos == LEFT) {
         turn = -curb;
     } else {
         turn = curb;
     }
-
     return turn;
 }
 
@@ -650,6 +652,7 @@ TARGET_REFLECT_t change_target_reflect(int color_code) {
 
     for (i = 0; sizeof(target_reflect_def) / sizeof(target_reflect_def[0]); i++) {
         if (target_reflect_def[i].color == color_code) {
+            LOG_D_DEBUG("target reflect changd. -> %d\n", target_reflect_def[i].reflect);
             return target_reflect_def[i];
         }
     }
@@ -665,6 +668,9 @@ TARGET_REFLECT_t change_target_reflect(int color_code) {
 // 概要   : 現在の逆となる方向を返す
 //*****************************************************************************
 int changet_trace_pos(int now_trace_pos) {
+    LOG_D_DEBUG("trace_pos changed. %s -> %s\n",
+                now_trace_pos == RIGHT ? "RIGHT" : "LEFT",
+                now_trace_pos == RIGHT ? "LEFT" : "RIGHT");
     return now_trace_pos == RIGHT ? LEFT : RIGHT;
 }
 

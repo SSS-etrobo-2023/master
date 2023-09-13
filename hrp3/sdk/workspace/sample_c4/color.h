@@ -1,8 +1,8 @@
 #ifndef __COLOR_H__
 #define __COLOR_H__
 
-#define LIGHT_BLACK 0    /* 黒色の光センサ値 */
-#define LIGHT_WHITE 50   /* 白色の光センサ値 */
+#define LIGHT_BLACK 2    /* 黒色の光センサ値 */
+#define LIGHT_WHITE 40   /* 白色の光センサ値 */
 
 /* カラーコード定義 */
 enum color_code{
@@ -28,9 +28,9 @@ typedef struct {
 } TARGET_REFLECT_t;
 
 TARGET_REFLECT_t target_reflect_def[3] = {
-    {COLOR_CODE_BLACK, LIGHT_WHITE * (1 / 5)},
-    {COLOR_CODE_WHITE, LIGHT_WHITE * (4 / 5)},
-    {COLOR_CODE_BLUE,  LIGHT_WHITE * (2 / 5)}
+    {COLOR_CODE_BLACK, (LIGHT_WHITE * 1) / 5},
+    {COLOR_CODE_WHITE, (LIGHT_WHITE * 3) / 5},
+    {COLOR_CODE_BLUE,  (LIGHT_WHITE * 2) / 5}
 };
 
 /* 色彩センサ　閾値 */
