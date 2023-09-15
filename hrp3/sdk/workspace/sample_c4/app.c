@@ -227,20 +227,24 @@ void main_task(intptr_t unused)
     /**
     * Main loop
     */
-   float Kp = 1.0;
+   float Kp = 0.95 ;
    float Ki = 0.2;
    float Kd = 0.005;
+//       float Kp = 0.95;
+//    float Ki = 0.2;
+//    float Kd = 0.005;
    float P;
    float I;
    float D;
    rgb_raw_t main_rgb;
    float sensor = 0;
-   float sensor_dt = 0;
-   float sensor_dt_pre = 0;
+   static float sensor_dt = 0;
+   static float sensor_dt_pre = 0;
    float curb = 0.0;
    float sensor_diff = (LIGHT_WHITE + LIGHT_BLACK)/2;
    float sensor_reflect = 0;
-   forward = 40; 
+   forward = 48 ; 
+//    forward = 45; 
    float weight;
    int blue_count = 0;
    int is_blue = 0;
@@ -263,15 +267,12 @@ void main_task(intptr_t unused)
         }
         else
         {
-            if(counter <= 100000 ){
+            if(counter <= 60 ){
                 counter++;
-//                float Kp = 10;
-  //              float Kd = 0;
+                forward = 30;
                 
             } else {
-                // float Kp = 2.9;
-                // float Kd = 0.2;
-                // forward = 40; 
+                 forward = 55; 
                 if(counter >= 1001)
                     LOG_D_DEBUG("あ");
             }
@@ -296,7 +297,7 @@ void main_task(intptr_t unused)
             //青かどうかの判定
             if(4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > blue_rgb.b * 3/4 && is_blue == 0){
                 is_blue = 1;
-                LOG_D_DEBUG("isBlue");
+                //LOG_D_DEBUG("isBlue");
             }
             if(!((4 * main_rgb.r < main_rgb.b && 2 * main_rgb.g < main_rgb.b && main_rgb.b > blue_rgb.b * 3/4 && is_blue)
             || (main_rgb.r > white_rgb.r/2
@@ -312,6 +313,7 @@ void main_task(intptr_t unused)
             if(sensor > LIGHT_WHITE){
                 sensor = LIGHT_WHITE;
             }
+            LOG_D_DEBUG("%u",sensor);
             P = ((float)(LIGHT_WHITE + LIGHT_BLACK)/2 - sensor);
 
             // I制御
@@ -323,8 +325,8 @@ void main_task(intptr_t unused)
 
             //曲がり角度の決定
             curb = Kp * sensor_dt + Ki*ie + Kd*de;
-            LOG_D_DEBUG("Kp: %f\nsensor_dt: %f\nKi: %f\nie: %f\nKd: %f\nde: %f\n",
-                        Kp, sensor_dt, Ki, ie, Kd, de);
+            //LOG_D_DEBUG("Kp: %f\nsensor_dt: %f\nKi: %f\nie: %f\nKd: %f\nde: %f\n",
+           //             Kp, sensor_dt, Ki, ie, Kd, de);
 
             if (curb > 100){
                 curb = 80;
@@ -336,8 +338,9 @@ void main_task(intptr_t unused)
             // * (fabsf(P) / ((LIGHT_WHITE + LIGHT_BLACK)/2.0))
             //  + Ki * I;
             // - Kd * D;
+            // 角度を変えるときはここをいじる
             turn = -curb;
-            LOG_D_DEBUG("curb :%f", curb);
+            //LOG_D_DEBUG("curb :%f", curb);
 
             if(blue_count == 3
             ){
