@@ -5,7 +5,7 @@
 #include "matrix.h"
 #include "color.h"
 
-extern float culculate_turn(unsigned int target_reflect, int trace_pos);
+extern float culculate_turn(unsigned int target_reflect, int trace_pos, float pid[3]);
 extern void matrix_move_sequence(MATRIX_ORDER_t order);
 extern void do_push_blue_block(void);
 TARGET_REFLECT_t change_target_reflect(int color_code);

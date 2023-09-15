@@ -88,7 +88,7 @@ static int      bt_cmd = 0;     /* Bluetoothコマンド 1:リモートスター
 //int color_reflect;
 
 //course種類 1-右コース 2-左コース
-int course_type = RIGHT;
+int course_type = LEFT;
 
 //serach_mode =0 :通常走行モード
 //int serach_mode=0;
@@ -115,7 +115,7 @@ static void _log(char* text);
 /* メインタスク */
 void main_task(intptr_t unused)
 {
-    signed char forward = 40; /* 前後進命令 */
+    signed char forward = 30; /* 前後進命令 */
     float turn;         /* 旋回命令 */
     int read_color;
 
@@ -288,11 +288,13 @@ void main_task(intptr_t unused)
     float sensor_reflect = 0;
    
     int count = 0;
+    int counter = 0;
     int blue_count = 0;
     int is_blue = 0;
-    int wait_flame = 40;
+    int wait_flame = 45;
     int interval = -1;
     int chg_flag = 0;
+    float pid[3] = {0.95,1.0,0.007};
  
     //最初のレイントレースでは、
     //右コースはラインの左、左コースはラインの右を白寄りでトレース
@@ -329,9 +331,19 @@ void main_task(intptr_t unused)
         }
         //LOG_D_DEBUG("interval: %d\n", interval);
 
+        if(counter < 60 ){
+            counter++;
+            forward = 30;
+        } else {
+            forward = 45;
+        }
+
         if (blue_count == 1 && chg_flag == 1) {
             forward = 35;
             //反射基準値を切り替える -> 青を検出しやすくする
+            pid[0] = 2.0;
+            pid[1] = 1.0;
+            pid[2] = 0.015;
             target_reflect = change_target_reflect(COLOR_CODE_BLUE);
             chg_flag = 0;
         }
@@ -353,19 +365,20 @@ void main_task(intptr_t unused)
         if(blue_count == 5 && count < wait_flame){
             if(chg_flag == 1){
                 trace_pos = changet_trace_pos(trace_pos);
-                target_reflect = change_target_reflect(COLOR_CODE_BLACK);
                 chg_flag = 0;
+                LOG_D_DEBUG("aaa");
             }
             count++;
         }
 
         if(blue_count >= 5 && count == wait_flame){
             //反射基準値を切り替える
+            LOG_D_DEBUG("bbb");
             trace_pos = changet_trace_pos(trace_pos);
             count++;
         }
 
-        turn = culculate_turn(target_reflect.reflect, trace_pos);
+        turn = culculate_turn(target_reflect.reflect, trace_pos,pid);
 
         ev3_motor_steer(
             left_motor,
@@ -487,7 +500,7 @@ void main_task(intptr_t unused)
             line_color = COLOR_CODE_UNKNOWN;
         }
 
-        turn = culculate_turn(target_reflect.reflect, trace_pos);
+        turn = culculate_turn(target_reflect.reflect, trace_pos, pid);
 
         ev3_motor_steer(
             left_motor,
@@ -527,7 +540,7 @@ void main_task(intptr_t unused)
 // 返り値 : 角度
 // 概要   : 引数から PID制御を行い、角度を返す　
 //*****************************************************************************
-float culculate_turn(unsigned int target_reflect, int trace_pos) {
+float culculate_turn(unsigned int target_reflect, int trace_pos,float pid[3]) {
     float turn = 0;
     float curb = 0;
 
@@ -540,9 +553,9 @@ float culculate_turn(unsigned int target_reflect, int trace_pos) {
 
     //制御定数
     const float T  = 0.002;
-    const float Kp = 2.0;
-    const float Ki = 1.0;
-    const float Kd = 0.015;
+    const float Kp = pid[0];
+    const float Ki = pid[1];
+    const float Kd = pid[2];
 
     sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
     if(sensor_reflect > LIGHT_WHITE){
