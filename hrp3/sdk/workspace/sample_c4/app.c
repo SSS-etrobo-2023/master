@@ -590,9 +590,9 @@ void main_task(intptr_t unused)
     //マトリクス攻略
     while(1)
     {
-        if(course_type ==LEFT) {
+        if(course_type ==RIGHT) {
             matrix_move_sequence(list_order.right_matrix_order[order_pattern][order_red_pos]);
-            approach_to_goal_sequence(list_order.left_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
+            approach_to_goal_sequence(list_order.right_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
             //ゴール移動シーケンス追加
 
         } else {
