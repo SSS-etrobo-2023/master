@@ -29,7 +29,7 @@ typedef struct {
 
 TARGET_REFLECT_t target_reflect_def[3] = {
     {COLOR_CODE_BLACK, (LIGHT_WHITE * 1) / 5},
-    {COLOR_CODE_WHITE, (LIGHT_WHITE * 3) / 5},
+    {COLOR_CODE_WHITE, (LIGHT_WHITE * 2) / 3},
     {COLOR_CODE_BLUE,  (LIGHT_WHITE * 2) / 5}
 };
 

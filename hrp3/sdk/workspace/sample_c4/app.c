@@ -304,13 +304,13 @@ void main_task(intptr_t unused)
     float sensor_reflect = 0;
    
     int count = 0;
-    int counter = 0;
+    int first_counter = 0;
     int blue_count = 0;
     int is_blue = 0;
     int wait_flame = 45;
     int interval = -1;
     int chg_flag = 0;
-    float pid[3] = {0.95,1.0,0.007};
+    float pid[3] = {1.5,1.0,0.015};
  
     //最初のレイントレースでは、
     //右コースはラインの左、左コースはラインの右を白寄りでトレース
@@ -347,10 +347,11 @@ void main_task(intptr_t unused)
         }
         //LOG_D_DEBUG("interval: %d\n", interval);
 
-        if(counter < 60 ){
-            counter++;
+        if(first_counter < 60 ){
+            first_counter++;
             forward = 30;
-        } else {
+        } else if(first_counter == 60) {
+            first_counter = 100;
             forward = 45;
         }
 
