@@ -46,7 +46,7 @@ typedef struct {
 LIST_ORDER_t list_order;
 
 // マトリクス命令リスト 初期値
-const MATRIX_ORDER_t right_list_order[PATTERN_MAX][MATRIX_COLOR_MAX] = {
+const MATRIX_ORDER_t left_list_order[PATTERN_MAX][MATRIX_COLOR_MAX] = {
     /* パターン1 */
     {
         /* 赤ブロックが赤の位置 */
@@ -308,7 +308,7 @@ const MATRIX_ORDER_t right_list_order[PATTERN_MAX][MATRIX_COLOR_MAX] = {
     },
 };
 
-const MATRIX_ORDER_t left_list_order[PATTERN_MAX][MATRIX_COLOR_MAX] = {
+const MATRIX_ORDER_t right_list_order[PATTERN_MAX][MATRIX_COLOR_MAX] = {
     /* パターン1 */
     {
         /* 赤ブロックが赤の位置 */

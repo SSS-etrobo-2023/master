@@ -590,7 +590,7 @@ void main_task(intptr_t unused)
     //マトリクス攻略
     while(1)
     {
-        if(course_type ==RIGHT) {
+        if(course_type == RIGHT) {
             matrix_move_sequence(list_order.right_matrix_order[order_pattern][order_red_pos]);
             approach_to_goal_sequence(list_order.right_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
             //ゴール移動シーケンス追加
@@ -955,13 +955,13 @@ void turn_90_degree(int flag_turn) {
 
     if(flag_turn==1){
         //右旋回
-        ev3_motor_rotate(right_motor, rotate_degree , 20, false);
-        ev3_motor_rotate(left_motor , -rotate_degree, 20, true);
+        ev3_motor_rotate(right_motor, -rotate_degree , 20, false);
+        ev3_motor_rotate(left_motor , rotate_degree, 20, true);
 
     }else if(flag_turn==2){
         //左旋回
-        ev3_motor_rotate(left_motor , rotate_degree , 20, false);
-        ev3_motor_rotate(right_motor , -rotate_degree, 20, true);
+        ev3_motor_rotate(left_motor , -rotate_degree , 20, false);
+        ev3_motor_rotate(right_motor , rotate_degree, 20, true);
 
     }
     
@@ -1033,7 +1033,7 @@ void trace_node(void) {
 
             LOG_D_DEBUG("trace_node [black]\n");
         }
-        read_color=ret_color_code(NULL);
+        read_color=judge_color(NULL);
 
         //色(赤、青、黄、緑)検出時
         if(read_color==COLOR_CODE_BLUE    ||read_color==COLOR_CODE_YELLOW 
