@@ -11,6 +11,7 @@ extern void do_push_blue_block(void);
 TARGET_REFLECT_t change_target_reflect(int color_code);
 int changet_trace_pos(int now_trace_pos);
 extern int isfound_red(rgb_raw_t *dbg_rgb);
+extern int judge_color(rgb_raw_t *dbg_rgb);
 extern int ret_color_code(rgb_raw_t *ret_rgb);
 extern void move_to_matrix_start_pos(int course_flag);
 extern void motor_set_two_motor(int LeftMotorPower, int RightMotorPower);

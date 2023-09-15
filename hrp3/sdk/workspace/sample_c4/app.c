@@ -167,6 +167,7 @@ void main_task(intptr_t unused)
         fprintf(bt, "Bluetooth Remote Start: Ready.\n");
         fprintf(bt, "1 : start\n");
         fprintf(bt, "2 : get light power\n");
+        fprintf(bt, "3 : get RGB every second\n");
     }
 
     /* スタート待機 */
@@ -183,7 +184,22 @@ void main_task(intptr_t unused)
             LOG_D_DEBUG("R:%u, G:%u, B:%u\n", dbg_raw.r, dbg_raw.g, dbg_raw.b);
             LOG_D_DEBUG("Reflect:%d\n", ev3_color_sensor_get_reflect(color_sensor));
             bt_cmd = 0;
-        }
+        } else if (bt_cmd == 3) {
+            /* 1秒おきにRGB値取得/判定 */
+            while (bt_cmd == 3) {
+                rgb_raw_t dbg_raw;
+                char color_msg[COLOR_CODE_UNKNOWN + 1][10] = {
+                    "RED", "BULE", "GREEN", "YELLOW", "BLACK", "WHITE", "UNKNOWN"
+                };
+                int line_color = judge_color(&dbg_raw);
+
+                LOG_D_DEBUG("R:%u, G:%u, B:%u, color:%s\n",
+                            dbg_raw.r, dbg_raw.g, dbg_raw.b, color_msg[line_color]);
+
+                tslp_tsk(1000 * 1000U);
+            }
+            bt_cmd = 0;
+        }    
 
         if (ev3_touch_sensor_is_pressed(touch_sensor) == 1)
         {
@@ -350,8 +366,8 @@ void main_task(intptr_t unused)
 
         if(blue_count == 3 && chg_flag == 1){
             sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
-            LOG_D_DEBUG("sensor_reflect: %d\ntarget_reflect.color: %d\ntarget_reflect.reflect: %d\n",
-                        sensor_reflect, target_reflect.color, target_reflect.reflect);
+            //LOG_D_DEBUG("sensor_reflect: %d\ntarget_reflect.color: %d\ntarget_reflect.reflect: %d\n",
+            //            sensor_reflect, target_reflect.color, target_reflect.reflect);
             //取得値が基準値よりも小さい = 黒(or青)にいるケースで切り替える想定
             if (true) {
                 //トレース方向を切り替える
@@ -397,24 +413,31 @@ void main_task(intptr_t unused)
     ev3_motor_stop(right_motor, false);
     tslp_tsk(100 * 1000U); /* 100msec 停止*/
 
+    //トレース位置、power を変更する
+    //右コースなら黒線の左、左コースなら黒線の右をトレースしながら進む
+    //色検出の精度を高めるため、黒よりを走行する
+    trace_pos = (course_type == RIGHT) ? LEFT : RIGHT;
+    target_reflect = change_target_reflect(COLOR_CODE_WHITE);
+    forward = 15;
+
     //マトリクスに向かって移動する
     if (course_type == RIGHT) {
-        turn_specified_degree(75, LEFT);
+        turn_specified_degree(85, LEFT);
     } else {
-        turn_specified_degree(75, RIGHT);
+        turn_specified_degree(85, RIGHT);
     }
-    tslp_tsk(100 * 1000U); /* 100msec 停止*/
+    tslp_tsk(500 * 1000U); /* 500msec 停止*/
 
     //誤作動を防ぐため、一定距離進
-    ev3_motor_rotate(right_motor, 100, 30, false);
-    ev3_motor_rotate(left_motor , 100, 30, true);
-    tslp_tsk(100 * 1000U); /* 100msec 停止*/
+    ev3_motor_rotate(right_motor, 150, 20, false);
+    ev3_motor_rotate(left_motor , 150, 20, true);
+    tslp_tsk(500 * 1000U); /* 500msec 停止*/
 
-    ev3_motor_set_power(left_motor, 10);
-    ev3_motor_set_power(right_motor, 10);
+    ev3_motor_set_power(left_motor, 15);
+    ev3_motor_set_power(right_motor, 15);
 
     while (1) {
-        read_color = ret_color_code(&dbg_rgb);
+        read_color = judge_color(&dbg_rgb);
         if (read_color == COLOR_CODE_BLACK) {
             LOG_D_DEBUG("arrived matrix. adjust position.\n");
             LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
@@ -426,12 +449,11 @@ void main_task(intptr_t unused)
             LOG_D_DEBUG("arrived block circle. modify over black.\n");
             LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
 
-            ev3_motor_rotate(right_motor, -200, 30, false);
-            ev3_motor_rotate(left_motor, -200, 30, true);
+            ev3_motor_rotate(right_motor, -200, 20, false);
+            ev3_motor_rotate(left_motor, -200, 20, true);
             tslp_tsk(100 * 1000U);
 
-            if (((course_type == RIGHT) && (read_color == COLOR_CODE_RED)) ||
-                ((course_type == LEFT) && (read_color == COLOR_CODE_BLUE))) {
+            if (course_type == RIGHT) {
                 turn_specified_degree(45, LEFT);
             } else {
                 turn_specified_degree(45, RIGHT);
@@ -439,8 +461,8 @@ void main_task(intptr_t unused)
             tslp_tsk(100 * 1000U);
 
             //もう一度黒線まで直進する
-            ev3_motor_set_power(left_motor, 10);
-            ev3_motor_set_power(right_motor, 10);
+            ev3_motor_set_power(left_motor, 15);
+            ev3_motor_set_power(right_motor, 15);
         }
 
         tslp_tsk(4 * 1000U); /* 4msec 停止*/
@@ -450,8 +472,8 @@ void main_task(intptr_t unused)
 
     //角度をただす
     //車軸-センサー間分(5cm)前進
-    ev3_motor_rotate(right_motor, 40, 30, false);
-    ev3_motor_rotate(left_motor , 40, 30, true);
+    ev3_motor_rotate(right_motor, 40, 20, false);
+    ev3_motor_rotate(left_motor , 40, 20, true);
 
     while(1){
         if (course_type == RIGHT) {
@@ -462,54 +484,104 @@ void main_task(intptr_t unused)
             ev3_motor_rotate(right_motor , 10, 20, true);
         }
 
-        read_color = ret_color_code(&dbg_rgb);
+        read_color = judge_color(&dbg_rgb);
         if (read_color == COLOR_CODE_BLACK) {
             LOG_D_DEBUG("adjust position done. move to red block circle.\n");
             LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
             //到着した
             break;
+        } else if (read_color == COLOR_CODE_BLUE) {
+            //青のブロックサークルに到着したので、
+            //ライントレースしながら黒まで進む
+            LOG_D_DEBUG("arrived blue block circle. linetrace start.\n");
+            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+
+            while (1) {
+                read_color = judge_color(&dbg_rgb);
+                if (read_color == COLOR_CODE_BLACK) {
+                    LOG_D_DEBUG("adjust positon. 90 degree rotate.\n");
+                    LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+                    if (course_type == RIGHT) {
+                        turn_specified_degree(90, LEFT);
+                    } else {
+                        turn_specified_degree(90, RIGHT);
+                    }
+
+                    break;
+                }
+
+                turn = culculate_turn(target_reflect.reflect, trace_pos, pid);
+                ev3_motor_steer(left_motor, right_motor, 10, turn);
+                
+                tslp_tsk(2 * 1000U); /* 2msec周期起動 */
+            }
         }
 
         tslp_tsk(4 * 1000U); /* 4msec 停止*/
     }
 
     //赤のブロックサークルまで移動する
-    //右コースなら黒線の左、左コースなら黒線の右をトレースしながら進む
-    //色検出の精度を高めるため、黒よりを走行する
-    trace_pos = (course_type == RIGHT) ? LEFT : RIGHT;
-    target_reflect = change_target_reflect(COLOR_CODE_BLACK);
-    int line_color = COLOR_CODE_UNKNOWN;
-    forward = 15;
-
     while (1) {
-        line_color = ret_color_code(&dbg_rgb);
-        if (line_color == COLOR_CODE_BLUE) {
-            //ブロックサークルを直進して進む
-            LOG_D_DEBUG("blue block circle found.\n")
-            LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
-            //白よりに進むよう、power を調整
-            ev3_motor_rotate(right_motor, 200, 20 + 10 * (trace_pos == LEFT), false);
-            ev3_motor_rotate(left_motor , 200, 20 + 10 * (trace_pos == RIGHT), true);
-        } else if (line_color == COLOR_CODE_RED) {
+        read_color = judge_color(&dbg_rgb);
+        if (read_color == COLOR_CODE_BLUE) {
+            sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
+            //青は反射値が低いため、反射値も考慮する
+            if (sensor_reflect < LIGHT_WHITE / 2) {
+#if 1
+                //ブロックサークルを直進して進む
+                LOG_D_DEBUG("blue block circle found.\n");
+                LOG_D_TEST("reflect: %d", sensor_reflect);
+                LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+                //白よりに進むよう、power を調整
+                ev3_motor_rotate(right_motor, 200, 20 + 1 * (trace_pos == LEFT), false);
+                ev3_motor_rotate(left_motor , 200, 20 + 1 * (trace_pos == RIGHT), true);
+#else
+                //ブロックサークルをトレースして進む
+                LOG_D_DEBUG("blue block circle found.\n")
+                LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+
+                if (course_type == RIGHT) {
+                    turn_specified_degree(90, LEFT);
+                } else {
+                    turn_specified_degree(90, RIGHT);
+                }
+
+                while (1) {
+                    read_color = judge_color(&dbg_rgb);
+                    if (read_color == COLOR_CODE_BLACK) {
+                        LOG_D_DEBUG("adjust positon. 90 degree rotate.\n");
+                        LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
+                        if (course_type == RIGHT) {
+                            turn_specified_degree(90, LEFT);
+                        } else {
+                            turn_specified_degree(90, RIGHT);
+                        }
+
+                        break;
+                    }
+
+                    turn = culculate_turn(target_reflect.reflect, trace_pos, pid);
+                    ev3_motor_steer(left_motor, right_motor, 10, turn);
+
+                    tslp_tsk(2 * 1000U); /* 2msec周期起動 */
+                }
+#endif
+            }
+        } else if (read_color == COLOR_CODE_RED) {
             //移動完了、マトリクス攻略を行う
             LOG_D_DEBUG("arrived red block circle.\n");
             LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
             break;
         } else {
             //念のため UNKOWN で更新する
-            line_color = COLOR_CODE_UNKNOWN;
+            read_color = COLOR_CODE_UNKNOWN;
         }
 
         turn = culculate_turn(target_reflect.reflect, trace_pos, pid);
 
-        ev3_motor_steer(
-            left_motor,
-            right_motor,
-            forward,
-            turn
-        );
+        ev3_motor_steer( left_motor, right_motor, forward, turn);
         
-        tslp_tsk(1 * 1000U); /* 1msec周期起動 */
+        tslp_tsk(2 * 1000U); /* 2msec周期起動 */
     }
 
     LOG_D_DEBUG("Start 'block de treasure hunter.'\n");
@@ -706,6 +778,33 @@ int isfound_red(rgb_raw_t *dbg_rgb) {
     }
 
     return COLOR_CODE_UNKNOWN;
+}
+
+int judge_color(rgb_raw_t *dbg_rgb) {
+    int ret = COLOR_CODE_UNKNOWN;
+    rgb_raw_t read_rgb;
+    ev3_color_sensor_get_rgb_raw(color_sensor, &read_rgb);
+
+    if (read_rgb.r > 100 && read_rgb.g > 100 && read_rgb.b > 100) {
+        ret = COLOR_CODE_WHITE;
+    } else if (read_rgb.r < 25 && read_rgb.g < 25 && read_rgb.b < 25) {
+        ret = COLOR_CODE_BLACK;
+    } else if (read_rgb.r > 100 && read_rgb.r > 1.5 * read_rgb.g && read_rgb.r > 1.5 * read_rgb.b) {
+        ret = COLOR_CODE_RED;
+    } else if (read_rgb.g > 100 && read_rgb.g > 2 * read_rgb.r && read_rgb.g > 1.8 * read_rgb.b) {
+        ret = COLOR_CODE_GREEN;
+    } else if (read_rgb.b > 100 && read_rgb.b > 3 * read_rgb.r && read_rgb.b > 2 * read_rgb.g) {
+        ret = COLOR_CODE_BLUE;
+    } else if (read_rgb.r > 100 && read_rgb.g > 100 &&
+               read_rgb.r > 2 * read_rgb.b && read_rgb.g > 2 * read_rgb.b) {
+        ret = COLOR_CODE_YELLOW;
+    }
+
+    if (NULL != dbg_rgb) {
+        memcpy(dbg_rgb, &read_rgb, sizeof(rgb_raw_t));
+    }
+
+    return ret;
 }
 
 //*****************************************************************************
