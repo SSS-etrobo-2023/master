@@ -587,9 +587,17 @@ void main_task(intptr_t unused)
     LOG_D_DEBUG("Start 'block de treasure hunter.'\n");
 
     //マトリクス攻略
-    while(0)
+    while(1)
     {
-        matrix_move_sequence(list_order.left_matrix_order[order_pattern][order_red_pos]);
+        if(course_type ==LEFT) {
+            matrix_move_sequence(list_order.right_matrix_order[order_pattern][order_red_pos]);
+            approach_to_goal_sequence(list_order.left_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
+            //ゴール移動シーケンス追加
+
+        } else {
+            matrix_move_sequence(list_order.left_matrix_order[order_pattern][order_red_pos]);
+            approach_to_goal_sequence(list_order.left_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
+        }
         tslp_tsk(2 * 1000000U); /* 0.4msec周期起動 */
     }
 
@@ -662,7 +670,64 @@ float culculate_turn(unsigned int target_reflect, int trace_pos,float pid[3]) {
     }
     return turn;
 }
+//*****************************************************************************
+// 関数名 : approach_to_goal_sequence
+// 引数 :   マトリクス行動ルートを格納した配列, 配列サイズ
+// 返り値 : 
+// 概要 :　
+//*****************************************************************************
+void approach_to_goal_sequence(MATRIX_ORDER_t order){
 
+    int motor_degree=20;
+    int motor_power=20;
+    
+    
+    for(int i=0; i<ORDER_NUM_MAX; i++){
+
+        switch (order.move_to_goal_order[i]){
+        case move_forward:
+            LOG_D_DEBUG("approach_to_goal_sequence %d- move_forward\n",i);
+            trace_node();
+            break;
+        case turn_right:
+            LOG_D_DEBUG("approach_to_goal_sequence %d- turn_right\n",i);
+            turn_90_degree(1);
+            break;
+        case turn_left:
+            LOG_D_DEBUG("approach_to_goal_sequence %d- turn_left \n",i);
+            turn_90_degree(2);
+            break;
+        case move_on_white_zone:
+            
+            while(1){
+                if (ev3_color_sensor_get_reflect(color_sensor) >= (LIGHT_WHITE + LIGHT_BLACK)/2){
+                    //白部分の上の時
+                    ev3_motor_rotate(left_motor , motor_degree, motor_power, false);
+                    ev3_motor_rotate(right_motor, motor_degree, motor_power, true);
+                    LOG_D_DEBUG("trace_node [white]\n");
+
+                }else{
+                    //黒部分の上の時
+                    break;
+                }
+                LOG_D_DEBUG("approach_to_goal_sequence %d- move_on_white_zone \n",i);
+
+            }
+            break;
+        case move_to_goal:
+            while(1){
+                ev3_motor_rotate(left_motor , motor_degree, motor_power, false);
+                ev3_motor_rotate(right_motor, motor_degree, motor_power, true);
+                LOG_D_DEBUG("approach_to_goal_sequence %d- move_to_goal \n",i);
+            }
+            break;
+
+        default:
+            break;
+        }
+    }
+
+}
 //*****************************************************************************
 // 関数名 : matrix_move_sequence
 // 引数 :   マトリクス行動ルートを格納した配列
