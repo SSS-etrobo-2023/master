@@ -591,13 +591,19 @@ void main_task(intptr_t unused)
     while(1)
     {
         if(course_type == RIGHT) {
+
+            turn_90_degree_on_start_pos(2);
+
             matrix_move_sequence(list_order.right_matrix_order[order_pattern][order_red_pos]);
             approach_to_goal_sequence(list_order.right_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
-            //ゴール移動シーケンス追加
+
 
         } else {
+
+            turn_90_degree_on_start_pos(1);
             matrix_move_sequence(list_order.left_matrix_order[order_pattern][order_red_pos]);
             approach_to_goal_sequence(list_order.left_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
+            
         }
         tslp_tsk(2 * 1000000U); /* 0.4msec周期起動 */
     }
@@ -963,6 +969,52 @@ void turn_90_degree(int flag_turn) {
         ev3_motor_rotate(left_motor , -rotate_degree , 20, false);
         ev3_motor_rotate(right_motor , rotate_degree, 20, true);
 
+    }
+    
+}
+
+//*****************************************************************************
+// 関数名 : turn_90_degree_on_start_pos
+// 引数 :   1-右旋回　2-左旋回
+// 返り値 : 
+// 概要 :　スタート位置の赤パターンを発見時に実行し、赤パターンを超えて、黒線を発見するまで回転する
+//         マトリクス外周など黒線がない方向への回転には使えない
+//*****************************************************************************
+void turn_90_degree_on_start_pos(int flag_turn){
+
+    //赤発見時　赤パターンを超える回転角
+    const int degree_to_move_wheel_offset=70;
+    int motor_power=20;
+
+
+    //ブロックサークル間距離　移動
+    ev3_motor_rotate(right_motor, degree_to_move_node , 20, false);
+    ev3_motor_rotate(left_motor , degree_to_move_node , 20, true);
+
+
+
+    //車体　90度分旋回時　回転角度
+    const int rotate_degree=125;
+
+    while(1){
+        if(flag_turn==1){
+            //右旋回
+            ev3_motor_rotate(right_motor, -rotate_degree , 20, false);
+            ev3_motor_rotate(left_motor , rotate_degree, 20, true);
+            //黒線発見
+            if (ev3_color_sensor_get_reflect(color_sensor) < (LIGHT_WHITE + LIGHT_BLACK)/2){
+                break;
+            }
+
+        }else if(flag_turn==2){
+            //左旋回
+            ev3_motor_rotate(left_motor , -rotate_degree , 20, false);
+            ev3_motor_rotate(right_motor , rotate_degree, 20, true);
+
+            //黒線発見
+            if (ev3_color_sensor_get_reflect(color_sensor) < (LIGHT_WHITE + LIGHT_BLACK)/2){
+                break;
+            }
     }
     
 }
