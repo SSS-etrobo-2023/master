@@ -829,7 +829,7 @@ int judge_color(rgb_raw_t *dbg_rgb) {
 
     if (read_rgb.r > 100 && read_rgb.g > 100 && read_rgb.b > 100) {
         ret = COLOR_CODE_WHITE;
-    } else if (read_rgb.r < 25 && read_rgb.g < 25 && read_rgb.b < 25) {
+    } else if (read_rgb.r < 25 && read_rgb.g < 30 && read_rgb.b < 25) {
         ret = COLOR_CODE_BLACK;
     } else if (read_rgb.r > 100 && read_rgb.r > 1.5 * read_rgb.g && read_rgb.r > 1.5 * read_rgb.b) {
         ret = COLOR_CODE_RED;
