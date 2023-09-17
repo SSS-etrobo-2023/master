@@ -528,7 +528,6 @@ void main_task(intptr_t unused)
             sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
             //青は反射値が低いため、反射値も考慮する
             if (sensor_reflect < LIGHT_WHITE / 2) {
-#if 1
                 //ブロックサークルを直進して進む
                 LOG_D_DEBUG("blue block circle found.\n");
                 LOG_D_TEST("reflect: %d", sensor_reflect);
@@ -536,37 +535,6 @@ void main_task(intptr_t unused)
                 //白よりに進むよう、power を調整
                 ev3_motor_rotate(right_motor, 200, 20 + 1 * (trace_pos == LEFT), false);
                 ev3_motor_rotate(left_motor , 200, 20 + 1 * (trace_pos == RIGHT), true);
-#else
-                //ブロックサークルをトレースして進む
-                LOG_D_DEBUG("blue block circle found.\n")
-                LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
-
-                if (course_type == RIGHT) {
-                    turn_specified_degree(90, LEFT);
-                } else {
-                    turn_specified_degree(90, RIGHT);
-                }
-
-                while (1) {
-                    read_color = judge_color(&dbg_rgb);
-                    if (read_color == COLOR_CODE_BLACK) {
-                        LOG_D_DEBUG("adjust positon. 90 degree rotate.\n");
-                        LOG_D_TEST("R:%u, G:%u, B:%u\n", dbg_rgb.r, dbg_rgb.g, dbg_rgb.b);
-                        if (course_type == RIGHT) {
-                            turn_specified_degree(90, LEFT);
-                        } else {
-                            turn_specified_degree(90, RIGHT);
-                        }
-
-                        break;
-                    }
-
-                    turn = culculate_turn(target_reflect.reflect, trace_pos, pid);
-                    ev3_motor_steer(left_motor, right_motor, 10, turn);
-
-                    tslp_tsk(2 * 1000U); /* 2msec周期起動 */
-                }
-#endif
             }
         } else if (read_color == COLOR_CODE_RED) {
             //移動完了、マトリクス攻略を行う
@@ -988,8 +956,8 @@ void turn_90_degree_on_start_pos(int flag_turn){
 
 
     //ブロックサークル間距離　移動
-    ev3_motor_rotate(right_motor, degree_to_move_node , 20, false);
-    ev3_motor_rotate(left_motor , degree_to_move_node , 20, true);
+    ev3_motor_rotate(right_motor, degree_to_move_wheel_offset , 20, false);
+    ev3_motor_rotate(left_motor , degree_to_move_wheel_offset , 20, true);
 
 
 
@@ -1015,6 +983,7 @@ void turn_90_degree_on_start_pos(int flag_turn){
             if (ev3_color_sensor_get_reflect(color_sensor) < (LIGHT_WHITE + LIGHT_BLACK)/2){
                 break;
             }
+        }
     }
     
 }
