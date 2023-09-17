@@ -953,7 +953,7 @@ void turn_90_degree(int flag_turn) {
 void turn_90_degree_on_start_pos(int flag_turn){
 
     //赤発見時　赤パターンを超える回転角
-    const int degree_to_move_wheel_offset=70;
+    const int degree_to_move_wheel_offset=100;
     int motor_power=20;
 
 
@@ -963,7 +963,7 @@ void turn_90_degree_on_start_pos(int flag_turn){
 
 
     //車体　90度分旋回時　回転角度
-    const int rotate_degree=125;
+    const int rotate_degree=115;
 
     if(flag_turn==1){
         //右旋回
