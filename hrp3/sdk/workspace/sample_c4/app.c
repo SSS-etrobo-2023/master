@@ -962,32 +962,40 @@ void turn_90_degree_on_start_pos(int flag_turn){
     ev3_motor_rotate(left_motor , degree_to_move_wheel_offset , 20, true);
 
 
-
     //車体　90度分旋回時　回転角度
     const int rotate_degree=125;
 
-    while(1){
-        if(flag_turn==1){
-            //右旋回
-            ev3_motor_rotate(right_motor, -rotate_degree , 20, false);
-            ev3_motor_rotate(left_motor , rotate_degree, 20, true);
-            //黒線発見
-            if (ev3_color_sensor_get_reflect(color_sensor) < (LIGHT_WHITE + LIGHT_BLACK)/2){
-                break;
-            }
+    if(flag_turn==1){
+        //右旋回
+        ev3_motor_rotate(right_motor, -rotate_degree , 20, false);
+        ev3_motor_rotate(left_motor , rotate_degree, 20, true);
 
-        }else if(flag_turn==2){
-            //左旋回
-            ev3_motor_rotate(left_motor , -rotate_degree , 20, false);
-            ev3_motor_rotate(right_motor , rotate_degree, 20, true);
+    }else if(flag_turn==2){
+        //左旋回
+        ev3_motor_rotate(left_motor , -rotate_degree , 20, false);
+        ev3_motor_rotate(right_motor , rotate_degree, 20, true);
+    }
 
-            //黒線発見
-            if (ev3_color_sensor_get_reflect(color_sensor) < (LIGHT_WHITE + LIGHT_BLACK)/2){
-                break;
-            }
+    //ブロックサークル間距離　移動
+    ev3_motor_rotate(right_motor, degree_to_move_wheel_offset , 20, false);
+    ev3_motor_rotate(left_motor , degree_to_move_wheel_offset , 20, true);
+    
+    int read_color;
+    while (1) {
+        if (flag_turn == 1) {
+            ev3_motor_rotate(left_motor , 10, 20, false);
+            ev3_motor_rotate(right_motor , -10, 20, true);
+        } else {
+            ev3_motor_rotate(left_motor , -10, 20, false);
+            ev3_motor_rotate(right_motor , 10, 20, true);
+        }
+
+        read_color = judge_color(NULL);
+        if (read_color == COLOR_CODE_BLACK) {
+            //到着した
+            break;
         }
     }
-    
 }
 
 //未検証
