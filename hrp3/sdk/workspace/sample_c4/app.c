@@ -425,9 +425,9 @@ void main_task(intptr_t unused)
 
     //マトリクスに向かって移動する
     if (course_type == RIGHT) {
-        turn_specified_degree(85, LEFT);
+        turn_specified_degree(80, LEFT);
     } else {
-        turn_specified_degree(85, RIGHT);
+        turn_specified_degree(80, RIGHT);
     }
     tslp_tsk(500 * 1000U); /* 500msec 停止*/
 
@@ -475,8 +475,8 @@ void main_task(intptr_t unused)
 
     //角度をただす
     //車軸-センサー間分(5cm)前進
-    ev3_motor_rotate(right_motor, 40, 20, false);
-    ev3_motor_rotate(left_motor , 40, 20, true);
+    ev3_motor_rotate(right_motor, 50, 20, false);
+    ev3_motor_rotate(left_motor , 50, 20, true);
 
     while(1){
         if (course_type == RIGHT) {
