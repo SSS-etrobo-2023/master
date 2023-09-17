@@ -833,7 +833,7 @@ int judge_color(rgb_raw_t *dbg_rgb) {
         ret = COLOR_CODE_BLACK;
     } else if (read_rgb.r > 100 && read_rgb.r > 1.5 * read_rgb.g && read_rgb.r > 1.5 * read_rgb.b) {
         ret = COLOR_CODE_RED;
-    } else if (read_rgb.g > 100 && read_rgb.g > 2 * read_rgb.r && read_rgb.g > 1.8 * read_rgb.b) {
+    } else if (read_rgb.g > 60 && read_rgb.g > 2 * read_rgb.r && read_rgb.g > 1.7 * read_rgb.b) {
         ret = COLOR_CODE_GREEN;
     } else if (read_rgb.b > 100 && read_rgb.b > 3 * read_rgb.r && read_rgb.b > 2 * read_rgb.g) {
         ret = COLOR_CODE_BLUE;
@@ -1156,6 +1156,9 @@ void bt_task(intptr_t unused)
                 break;
             case '2':
                 bt_cmd = 2;
+                break;
+            case '3':
+                bt_cmd = 3;
                 break;
             default:
                 break;
