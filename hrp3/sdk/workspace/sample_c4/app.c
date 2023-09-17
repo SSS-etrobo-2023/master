@@ -564,14 +564,14 @@ void main_task(intptr_t unused)
 
             turn_90_degree_on_start_pos(2);
 
-            matrix_move_sequence(list_order.right_matrix_order[order_pattern][order_red_pos]);
+            matrix_move_sequence(list_order.right_matrix_order[order_pattern][order_red_pos].move_on_matrix_order);
             approach_to_goal_sequence(list_order.right_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
 
 
         } else {
 
             turn_90_degree_on_start_pos(1);
-            matrix_move_sequence(list_order.left_matrix_order[order_pattern][order_red_pos]);
+            matrix_move_sequence(list_order.left_matrix_order[order_pattern][order_red_pos].move_on_matrix_order);
             approach_to_goal_sequence(list_order.left_matrix_order[order_pattern][order_red_pos].move_to_goal_order);
             
         }
@@ -653,7 +653,7 @@ float culculate_turn(unsigned int target_reflect, int trace_pos,float pid[3]) {
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
-void approach_to_goal_sequence(MATRIX_ORDER_t order){
+void approach_to_goal_sequence(uint8_t order[ORDER_NUM_MAX]){
 
     int motor_degree=20;
     int motor_power=20;
@@ -661,7 +661,7 @@ void approach_to_goal_sequence(MATRIX_ORDER_t order){
     
     for(int i=0; i<ORDER_NUM_MAX; i++){
 
-        switch (order.move_to_goal_order[i]){
+        switch (order[i]){
         case move_forward:
             LOG_D_DEBUG("approach_to_goal_sequence %d- move_forward\n",i);
             trace_node();
@@ -711,11 +711,11 @@ void approach_to_goal_sequence(MATRIX_ORDER_t order){
 // 返り値 : 
 // 概要 :　
 //*****************************************************************************
-void matrix_move_sequence(MATRIX_ORDER_t order) {
+void matrix_move_sequence(uint8_t order[ORDER_NUM_MAX]) {
     int i = 0;
-    
+
     for(i = 0; i < ORDER_NUM_MAX; i++){
-        switch (order.move_on_matrix_order[i]){
+        switch (order[i]){
         case move_forward:
             LOG_D_DEBUG("matrix_move_sequence %d- move_forward\n",i);
             trace_node();
@@ -739,6 +739,7 @@ void matrix_move_sequence(MATRIX_ORDER_t order) {
             break;
 
         default:
+            LOG_D_DEBUG("order: %d\n", order[i]);
             break;
         }
     }
@@ -1085,8 +1086,8 @@ void trace_node(void) {
 
 void init_matrix_order(void) {
     memset(&list_order, 0x00, sizeof(LIST_ORDER_t));
-    memcpy(&list_order.left_matrix_order, &left_list_order, sizeof(MATRIX_ORDER_t));
-    memcpy(&list_order.right_matrix_order, &right_list_order, sizeof(MATRIX_ORDER_t));
+    memcpy(&list_order.left_matrix_order, &left_list_order, sizeof(left_list_order));
+    memcpy(&list_order.right_matrix_order, &right_list_order, sizeof(right_list_order));
 }
 
 //*****************************************************************************
