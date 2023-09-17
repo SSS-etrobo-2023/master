@@ -164,7 +164,7 @@ const MATRIX_ORDER_t left_list_order[PATTERN_MAX][MATRIX_COLOR_MAX] = {
             },
 
             {
-                move_forward, move_forward, move_forward, turn_right, move_forward,
+                turn_right, move_forward, move_forward, turn_right, move_forward,
                 turn_left, move_on_white_zone, turn_left, move_to_goal
             }
         },
