@@ -310,6 +310,7 @@ void main_task(intptr_t unused)
     int wait_flame = 45;
     int interval = -1;
     int chg_flag = 0;
+    float blue_rate = 1.5;
     float pid[3] = {1.5,1.0,0.015};
  
     //最初のレイントレースでは、
@@ -332,7 +333,7 @@ void main_task(intptr_t unused)
         //sensor_reflect = ev3_color_sensor_get_reflect(color_sensor);
 
         //青かどうかの判定
-        if((1.8 * main_rgb.r < main_rgb.b ) && (1.8 * main_rgb.g < main_rgb.b) && (is_blue == 0)
+        if((blue_rate * main_rgb.r < main_rgb.b ) && (blue_rate * main_rgb.g < main_rgb.b) && (is_blue == 0)
         && (main_rgb.r > THRE_R_OF_WHITE * 0.2 && main_rgb.g > THRE_G_OF_WHITE * 0.2 && main_rgb.b > THRE_B_OF_WHITE * 0.2)) {
             is_blue = 1;
             chg_flag = 1;
@@ -361,6 +362,7 @@ void main_task(intptr_t unused)
             pid[0] = 2.0;
             pid[1] = 1.0;
             pid[2] = 0.015;
+            blue_rate = 1.8;
             target_reflect = change_target_reflect(COLOR_CODE_BLUE);
             chg_flag = 0;
         }
