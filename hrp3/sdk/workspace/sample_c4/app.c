@@ -953,7 +953,7 @@ void turn_90_degree(int flag_turn) {
 void turn_90_degree_on_start_pos(int flag_turn){
 
     //赤発見時　赤パターンを超える回転角
-    const int degree_to_move_wheel_offset=90;
+    const int degree_to_move_wheel_offset=75;
     int motor_power=20;
 
 
